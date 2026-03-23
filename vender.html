@@ -54,15 +54,26 @@
     .btn-precio {
       background: var(--input-bg);
       border: 1px solid var(--border);
-      padding: 25px 10px;
-      border-radius: 18px;
+      padding: 18px 10px; /* Un poco más de aire */
+      border-radius: 16px; /* Bordes más suaves */
       color: white;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: center;
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: center;
+      gap: 5px;
+    }
+
+    .btn-precio b { 
+      font-size: 13px; 
+      text-transform: uppercase; 
+      letter-spacing: 1px;
+    }
+
+    .btn-precio span { 
+      font-size: 15px; 
     }
 
     .btn-precio b { font-size: 16px; margin-bottom: 5px; text-transform: uppercase; }
@@ -103,42 +114,48 @@
     document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotor.toUpperCase();
 
     // 1. CARGAR BOTONES DINÁMICAMENTE
+ // 1. CARGAR BOTONES DESDE TABLA PRECIOS (Versión Soles)
     async function cargarPrecios() {
         const grid = document.getElementById('grid-precios');
         
-        // Consultamos la tabla 'precios'
-        const { data, error } = await _supabase.from('precios').select('*');
+        // Llamada a Supabase
+        const { data, error } = await _supabase
+            .from('precios')
+            .select('*')
+            .order('precio', { ascending: true }); // Los ordena por precio de menor a mayor
 
         if (error) {
-            console.error("Error Supabase:", error);
-            grid.innerHTML = "<p style='color:red;'>Error al cargar. Revisa las políticas RLS.</p>";
+            grid.innerHTML = "<p style='color:red; font-size:10px;'>Error de conexión</p>";
+            console.error(error);
             return;
         }
 
-        if (data.length === 0) {
-            grid.innerHTML = "<p>No hay precios configurados.</p>";
-            return;
-        }
-
-        grid.innerHTML = ""; // Limpiar mensaje de carga
+        grid.innerHTML = ""; // Limpiar el "Cargando..."
 
         data.forEach(p => {
             const btn = document.createElement('div');
             btn.className = 'btn-precio';
-            btn.innerHTML = `<b>PEN{p.tipo_entrada}</b><span>$${p.precio}</span>`;
             
+            // Formateo en Soles S/
+            btn.innerHTML = `
+                <b>${p.tipo_entrada}</b>
+                <span style="color: var(--accent); font-weight: bold;">S/ ${p.precio}</span>
+            `;
+
             btn.onclick = function() {
-                // Guardamos la selección y pasamos al siguiente paso
-                localStorage.setItem('ticket_seleccionado', p.tipo_entrada);
-                localStorage.setItem('precio_seleccionado', p.precio);
+                // Quitar selección a los demás
+                document.querySelectorAll('.btn-precio').forEach(b => {
+                    b.classList.remove('selected');
+                    b.style.borderColor = "var(--border)";
+                    b.style.background = "var(--input-bg)";
+                });
                 
-                // Efecto visual rápido antes de cambiar de página
+                // Marcar este como seleccionado
                 btn.classList.add('selected');
+                btn.style.borderColor = "var(--accent)";
+                btn.style.background = "rgba(0, 242, 254, 0.1)";
                 
-                setTimeout(() => {
-                    // Aquí rediriges a la página donde pides el nombre
-                    window.location.href = "cliente.html"; 
-                }, 200);
+                entradaSeleccionada = p.tipo_entrada;
             };
             grid.appendChild(btn);
         });
