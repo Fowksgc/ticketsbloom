@@ -1,104 +1,214 @@
-<div class="field">
-    <label>Selecciona el Tipo de Entrada</label>
-    <div id="botones-precios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-        <p style="color: #666; font-size: 12px;">Cargando precios...</p>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TicketsBloom - Generar Ticket</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <style>
+    /* REPLICANDO TU ESTÉTICA DARK PREMIUM */
+    :root {
+      --bg: #050509;
+      --card: #10101e;
+      --accent: #00f2fe;
+      --border: #1f1f33;
+      --text: #ffffff;
+      --input-bg: #080812;
+    }
+
+    body {
+      font-family: -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      padding-top: 30px;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 400px;
+      background: var(--card);
+      padding: 30px;
+      border-radius: 25px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    h2 { color: var(--accent); text-align: center; letter-spacing: 3px; font-size: 1.4rem; margin-bottom: 5px; }
+    .subtitle { text-align: center; color: #666; font-size: 11px; margin-bottom: 25px; letter-spacing: 1px; }
+
+    .field { margin-bottom: 20px; }
+    label { display: block; font-size: 11px; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
+    
+    input[type="text"] {
+      width: 100%;
+      padding: 15px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    /* CONTENEDOR DE BOTONES (Igual a tu diseño anterior) */
+    .grid-precios {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn-precio {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      padding: 15px 10px;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .btn-precio b { display: block; font-size: 14px; margin-bottom: 4px; }
+    .btn-precio span { font-size: 12px; opacity: 0.6; }
+
+    /* Estado seleccionado (Neón) */
+    .btn-precio.selected {
+      border-color: var(--accent);
+      background: rgba(0, 242, 254, 0.1);
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+    }
+
+    .btn-main {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #007aff, var(--accent));
+      border: none;
+      border-radius: 15px;
+      color: #000;
+      font-weight: 800;
+      font-size: 15px;
+      margin-top: 20px;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    /* QR SECCIÓN */
+    #qr-result {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 20px;
+    }
+
+    #qrcode { display: inline-block; margin-bottom: 15px; }
+    .info-final { color: #000; font-size: 13px; font-weight: bold; line-height: 1.4; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>TICKETSBLOOM</h2>
+    <div class="subtitle" id="promotor-tag">CARGANDO...</div>
+
+    <div id="form-venta">
+        <div class="field">
+            <label>Nombre del Cliente</label>
+            <input type="text" id="nombre-cliente" placeholder="Ej. Juan Pérez">
+        </div>
+
+        <div class="field">
+            <label>Tipo de Entrada</label>
+            <div id="grid-precios" class="grid-precios">
+                </div>
+        </div>
+
+        <button class="btn-main" onclick="generarVenta()">Generar Ticket QR</button>
     </div>
-    <input type="hidden" id="tipo-entrada-seleccionada">
+
+    <div id="qr-result">
+        <div id="qrcode"></div>
+        <div class="info-final" id="info-final"></div>
+        <button onclick="location.reload()" style="margin-top:15px; background:none; border:1px solid #ccc; padding:8px 15px; border-radius:10px; font-size:11px;">Nueva Venta</button>
+    </div>
 </div>
 
 <script>
-    // Configuración (Usa tus mismas llaves)
-    const SUPABASE_URL = 'https://tu-proyecto.supabase.co'; 
-    const SUPABASE_KEY = 'tu-llave-anon-public'; 
+    // --- CONFIGURACIÓN ---
+    const SUPABASE_URL = 'TU_URL_AQUÍ'; 
+    const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let entradaSeleccionada = "";
+    let entradaSeleccionada = null;
+    const promotor = localStorage.getItem('promotor_activo') || 'Invitado';
+    document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotor.toUpperCase();
 
-    // FUNCIÓN PARA CARGAR BOTONES DESDE SUPABASE
-    async function cargarBotonesPrecios() {
-        const contenedor = document.getElementById('botones-precios');
-        
-        // Traemos los datos de la tabla 'precios'
-        const { data, error } = await _supabase
-            .from('precios')
-            .select('tipo_entrada, precio');
+    // 1. CARGAR BOTONES DESDE TABLA PRECIOS
+    async function cargarPrecios() {
+        const grid = document.getElementById('grid-precios');
+        const { data, error } = await _supabase.from('precios').select('*');
 
         if (error) {
-            contenedor.innerHTML = "<p style='color:red;'>Error al cargar precios</p>";
+            grid.innerHTML = "<p>Error al conectar</p>";
             return;
         }
 
-        contenedor.innerHTML = ""; // Limpiar mensaje de carga
-
+        grid.innerHTML = "";
         data.forEach(p => {
-            const btn = document.createElement('button');
-            btn.type = "button";
-            btn.className = "btn-precio";
-            btn.innerHTML = `<b>${p.tipo_entrada}</b><br>$${p.precio}`;
+            const btn = document.createElement('div');
+            btn.className = 'btn-precio';
+            btn.innerHTML = `<b>${p.tipo_entrada}</b><span>$${p.precio}</span>`;
+            btn.onclick = function() {
+                document.querySelectorAll('.btn-precio').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                entradaSeleccionada = p.tipo_entrada;
+            };
+            grid.appendChild(btn);
+        });
+    }
+
+    // 2. PROCESAR VENTA
+    async function generarVenta() {
+        const nombre = document.getElementById('nombre-cliente').value.trim();
+        if(!nombre || !entradaSeleccionada) {
+            alert("Completa el nombre y selecciona una entrada.");
+            return;
+        }
+
+        const codigo = "TB-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+        const { error } = await _supabase.from('tickets').insert([{
+            codigo_qr: codigo,
+            nombre_cliente: nombre,
+            tipo_entrada: entradaSeleccionada,
+            promotor: promotor,
+            usado: false
+        }]);
+
+        if (error) {
+            alert("Error al guardar: " + error.message);
+        } else {
+            document.getElementById('form-venta').style.display = 'none';
+            document.getElementById('qr-result').style.display = 'block';
             
-            // Estilo del botón (puedes mover esto al CSS)
-            Object.assign(btn.style, {
-                padding: "15px",
-                backgroundColor: "#0d0d1a",
-                border: "1px solid #33334d",
-                borderRadius: "12px",
-                color: "white",
-                cursor: "pointer",
-                transition: "all 0.3s"
+            new QRCode(document.getElementById("qrcode"), {
+                text: codigo, width: 180, height: 180
             });
 
-            btn.onclick = () => seleccionarEntrada(btn, p.tipo_entrada);
-            contenedor.appendChild(btn);
-        });
-    }
-
-    function seleccionarEntrada(elemento, tipo) {
-        // Desmarcar todos los botones
-        document.querySelectorAll('.btn-precio').forEach(b => {
-            b.style.borderColor = "#33334d";
-            b.style.backgroundColor = "#0d0d1a";
-            b.style.boxShadow = "none";
-        });
-
-        // Marcar el seleccionado con estilo Neón
-        elemento.style.borderColor = "#00f2fe";
-        elemento.style.backgroundColor = "rgba(0, 242, 254, 0.1)";
-        elemento.style.boxShadow = "0 0 15px rgba(0, 242, 254, 0.3)";
-        
-        entradaSeleccionada = tipo;
-        document.getElementById('tipo-entrada-seleccionada').value = tipo;
-    }
-
-    // MODIFICAR LA FUNCIÓN DE GUARDAR
-    async function procesarVenta() {
-        const nombre = document.getElementById('nombre-cliente').value.trim();
-        const tipo = entradaSeleccionada;
-        const promotor = localStorage.getItem('promotor_activo') || 'Anonimo';
-
-        if(!nombre || !tipo) {
-            alert("Por favor, escribe el nombre y selecciona una entrada.");
-            return;
-        }
-
-        const codigoUnico = "TB-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-
-        const { data, error } = await _supabase
-            .from('tickets')
-            .insert([{ 
-                codigo_qr: codigoUnico, 
-                nombre_cliente: nombre, 
-                tipo_entrada: tipo, 
-                promotor: promotor,
-                usado: false 
-            }]);
-
-        if (error) {
-            alert("Error: " + error.message);
-        } else {
-            mostrarQR(codigoUnico, nombre, tipo);
+            document.getElementById('info-final').innerHTML = 
+                `CLIENTE: ${nombre}<br>ENTRADA: ${entradaSeleccionada}<br>ID: ${codigo}`;
         }
     }
 
-    // Ejecutar al iniciar
-    window.onload = cargarBotonesPrecios;
+    window.onload = cargarPrecios;
 </script>
+
+</body>
+</html>
