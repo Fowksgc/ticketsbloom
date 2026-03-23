@@ -3,45 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Scanner Pro - TicketsBloom</title>
+    <title>TicketsBloom - Universal Scanner</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
     <style>
-        :root { --bg: #050509; --accent: #00f2fe; --card: #10101e; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; text-align: center; padding: 20px; }
+        :root { --bg: #050509; --accent: #00f2fe; --card: #10101e; --success: #00ff88; --error: #ff4d4d; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; text-align: center; overflow-x: hidden; }
         
-        #preview { 
-            width: 100%; max-width: 350px; height: 350px; object-fit: cover;
-            border-radius: 30px; border: 2px solid #1f1f33; background: #000;
-        }
-        
-        .btn-scan {
-            background: var(--accent); color: #000; border: none; padding: 20px;
-            width: 100%; max-width: 350px; border-radius: 15px; font-weight: bold;
-            margin-top: 20px; font-size: 16px; box-shadow: 0 10px 20px rgba(0, 242, 254, 0.2);
-        }
+        /* Contenedor de Video */
+        #container-cam { position: relative; width: 100%; max-width: 400px; margin: 0 auto; overflow: hidden; border-radius: 0 0 30px 30px; background: #000; height: 60vh; border-bottom: 2px solid #1f1f33; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        canvas { display: none; }
 
-        .result {
-            margin-top: 20px; padding: 20px; border-radius: 20px; background: var(--card);
-            border: 1px solid #1f1f33; display: none;
-        }
+        /* Guía visual de escaneo */
+        .scanner-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border: 2px solid var(--accent); border-radius: 20px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.5); pointer-events: none; }
+        
+        .btn-init { background: var(--accent); color: #000; border: none; padding: 20px; width: 80%; border-radius: 15px; font-weight: 800; margin-top: -30px; position: relative; z-index: 10; box-shadow: 0 10px 30px rgba(0,242,254,0.3); }
+
+        .result-overlay { position: fixed; bottom: 20px; left: 5%; width: 90%; padding: 25px; border-radius: 25px; background: var(--card); border: 1px solid #333; display: none; z-index: 100; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <h2 style="color:var(--accent); letter-spacing:3px;">TICKETSBLOOM</h2>
-    <p style="font-size:10px; color:#666;">LECTOR DE ACCESO PUERTA</p>
+    <div id="container-cam">
+        <video id="video" playsinline></video>
+        <div class="scanner-overlay"></div>
+    </div>
 
-    <video id="preview"></video>
+    <button id="btn-start" class="btn-init" onclick="initCamara()">ACTIVAR ESCÁNER</button>
 
-    <button id="start-btn" class="btn-scan" onclick="encender()">ENCENDER ESCÁNER</button>
-
-    <div id="result-box" class="result">
-        <div id="status" style="font-size:12px; color:var(--accent);">VERIFICANDO...</div>
-        <div id="nombre" style="font-size:22px; font-weight:bold; margin:10px 0;">---</div>
-        <div id="tipo">---</div>
+    <div id="result-box" class="result-overlay">
+        <div id="res-status" style="font-size:10px; letter-spacing:2px; margin-bottom:5px;">VERIFICANDO...</div>
+        <div id="res-name" style="font-size:22px; font-weight:bold; margin-bottom:5px;">---</div>
+        <div id="res-type" style="color:var(--accent);">---</div>
     </div>
 
     <script>
@@ -50,70 +47,85 @@
         const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let scanner = new Instascan.Scanner({ video: document.getElementById('preview'), mirror: false });
+        const video = document.getElementById("video");
+        const canvasElement = document.createElement("canvas");
+        const canvas = canvasElement.getContext("2d");
+        let scanning = false;
 
-        // Al detectar un QR
-        scanner.addListener('scan', function (content) {
-            validarTicket(content);
-        });
+        async function initCamara() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" } 
+                });
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true); // Requerido para iOS
+                video.play();
+                scanning = true;
+                document.getElementById('btn-start').style.display = 'none';
+                requestAnimationFrame(tick);
+            } catch (err) {
+                alert("Error: No se pudo acceder a la cámara. Revisa los permisos en tu navegador.");
+                console.error(err);
+            }
+        }
 
-        async function encender() {
-            const btn = document.getElementById('start-btn');
-            btn.innerText = "ACCEDIENDO A LENTE...";
+        function tick() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA && scanning) {
+                canvasElement.height = video.videoHeight;
+                canvasElement.width = video.videoWidth;
+                canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                
+                const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
 
-            Instascan.Camera.getCameras().then(function (cameras) {
-                if (cameras.length > 0) {
-                    // En iPhone, la cámara trasera suele ser la última de la lista (cameras.length - 1)
-                    // o la que contenga "back" o "trasera"
-                    let backCam = cameras.find(c => c.name.toLowerCase().includes('back')) || cameras[cameras.length - 1];
-                    
-                    scanner.start(backCam).then(() => {
-                        btn.style.display = 'none';
-                    });
-                } else {
-                    alert('No se encontraron cámaras.');
-                    btn.innerText = "ERROR CÁMARA";
+                if (code) {
+                    scanning = false; // Detener escaneo temporalmente
+                    validarTicket(code.data);
                 }
-            }).catch(function (e) {
-                console.error(e);
-                alert("Permiso denegado. Ve a Ajustes > Safari > Cámara.");
-            });
+            }
+            if (scanning) requestAnimationFrame(tick);
         }
 
         async function validarTicket(codigo) {
             const box = document.getElementById('result-box');
-            const nameTxt = document.getElementById('nombre');
-            const typeTxt = document.getElementById('tipo');
-            const statusTxt = document.getElementById('status');
-
             box.style.display = 'block';
-            nameTxt.innerText = codigo.split('|')[0];
+            
+            const parts = codigo.split('|');
+            document.getElementById('res-name').innerText = parts[0];
 
             try {
                 const { data, error } = await _supabase.from('tickets').select('*').eq('codigo_qr', codigo).single();
 
                 if (error || !data) {
-                    renderResult(false, "ERROR", "TICKET NO VÁLIDO");
+                    renderUI(false, "ERROR", "TICKET INVÁLIDO");
                 } else if (data.usado) {
-                    renderResult(false, "DENEGADO", "YA FUE USADO");
+                    renderUI(false, "DENEGADO", "YA FUE USADO");
                 } else {
                     await _supabase.from('tickets').update({ usado: true }).eq('codigo_qr', codigo);
-                    renderResult(true, "PERMITIDO", data.tipo_entrada);
+                    renderUI(true, "PERMITIDO", data.tipo_entrada);
                 }
             } catch (e) {
-                renderResult(false, "ERROR", "SIN CONEXIÓN");
+                renderUI(false, "ERROR", "SIN CONEXIÓN");
             }
 
-            setTimeout(() => { box.style.display = 'none'; }, 4000);
+            // Reiniciar escáner tras 3 segundos
+            setTimeout(() => {
+                box.style.display = 'none';
+                scanning = true;
+                requestAnimationFrame(tick);
+            }, 3000);
         }
 
-        function renderResult(ok, status, detail) {
+        function renderUI(ok, status, detail) {
             const box = document.getElementById('result-box');
-            box.style.background = ok ? "#00ff88" : "#ff4d4d";
+            box.style.background = ok ? "var(--success)" : "var(--error)";
             box.style.color = ok ? "#000" : "#fff";
-            document.getElementById('status').innerText = status;
-            document.getElementById('status').style.color = ok ? "#000" : "#fff";
-            document.getElementById('tipo').innerText = detail;
+            document.getElementById('res-status').innerText = status;
+            document.getElementById('res-type').innerText = detail;
+            document.getElementById('res-type').style.color = ok ? "#000" : "#fff";
+            if (navigator.vibrate) navigator.vibrate(ok ? 200 : [100, 50, 100]);
         }
     </script>
 </body>
