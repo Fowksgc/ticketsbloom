@@ -123,21 +123,23 @@ async function cargarPrecios() {
     
     const { data, error } = await _supabase
         .from('precios')
-        .select('tipo_entrada, precio, moneda');
+        .select('tipo_entrada, precio');
 
     if (error) return console.error("Error cargando precios:", error);
 
-    select.innerHTML = ""; // Limpiamos el select
+    // Limpiamos y llenamos el selector
+    select.innerHTML = "";
     data.forEach(p => {
         let opt = document.createElement('option');
         opt.value = p.tipo_entrada;
-        opt.innerHTML = `${p.tipo_entrada} - ${p.moneda}${p.precio}`;
+        opt.innerHTML = `${p.tipo_entrada} ($${p.precio})`;
         select.appendChild(opt);
     });
 }
 
-// Llamar a la función al cargar la página
+// Ejecutar al abrir la página
 window.onload = cargarPrecios;
+
   </script>
 </body>
 </html>
