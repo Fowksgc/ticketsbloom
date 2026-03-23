@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TicketsBloom - Scanner Pro</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  
+  <style>
+    :root { --bg: #0a0a12; --card: #161625; --accent: #00f2fe; --border: #33334d; --success: #25D366; --error: #ff6b6b; }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    
+    .header { padding: 20px; text-align: center; }
+    h2 { color: var(--accent); margin: 0; letter-spacing: 2px; font-size: 1.2rem; }
+
+    /* Contenedor de la cámara */
+    #reader { width: 100%; max-width: 350px; border-radius: 20px; overflow: hidden; border: 2px solid var(--border); background: black; }
+    
+    .status-card { margin-top: 20px; width: 85%; max-width: 350px; padding: 20px; border-radius: 15px; background: var(--card); border: 1px solid var(--border); text-align: center; min-height: 80px; display: flex; flex-direction: column; justify-content: center; transition: 0.3s; }
+    
+    .ok { background: var(--success); color: white; border: none; box-shadow: 0 0 20px rgba(37,211,102,0.4); }
+    .err { background: var(--error); color: white; border: none; box-shadow: 0 0 20px rgba(255,107,107,0.4); }
+    
+    .btn-reset { margin-top: 20px; background: none; border: 1px solid var(--accent); color: var(--accent); padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h2>TICKETSBLOOM</h2>
+    <p style="color: #666; font-size: 12px;">MODO ESCÁNER EN VIVO</p>
+  </div>
+
+  <div id="reader"></div>
+
+  <div id="status-container" class="status-card">
+    <div id="status-text">Enfoque un código QR para validar</div>
+  </div>
+
+  <button class="btn-reset" onclick="location.reload()">Reiniciar Cámara</button>
+
+  <script>
+    // 2. Configuración de Supabase (Usa las mismas que en app.js)
+    const SUPABASE_URL = 'TU_URL_AQUÍ'; 
+    const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const statusContainer = document.getElementById('status-container');
+    const statusText = document.getElementById('status-text');
+
+    // 3. Lógica del Escáner
+    async function onScanSuccess(decodedText) {
+        // Pausamos el escaneo para procesar
+        html5QrcodeScanner.pause(true);
+        
+        statusText.innerHTML = "⏳ Verificando en base de datos...";
+        statusContainer.className = "status-card";
+
+        try {
+            // Buscamos el ticket en Supabase
+            const { data: ticket, error } = await _supabase
+                .from('tickets')
+                .select('*')
+                .eq('codigo_qr', decodedText)
+                .single();
+
+            if (error || !ticket) {
+                showResult(false, "❌ TICKET NO ENCONTRADO");
+            } else if (ticket.usado) {
+                showResult(false, "⚠️ YA INGRESÓ: " + ticket.nombre_cliente);
+            } else {
+                // Marcar como usado
+                const { error: updError } = await _supabase
+                    .from('tickets')
+                    .update({ usado: true })
+                    .eq('codigo_qr', decodedText);
+
+                if (updError) throw updError;
+                showResult(true, "✅ ACCESO PERMITIDO<br>" + ticket.nombre_cliente);
+            }
+        } catch (e) {
+            showResult(false, "❌ ERROR DE CONEXIÓN");
+        }
+
+        // Reanudamos después de 3 segundos para el siguiente
+        setTimeout(() => {
+            html5QrcodeScanner.resume();
+            if(!statusContainer.classList.contains('ok') && !statusContainer.classList.contains('err')) {
+                statusText.innerText = "Enfoque un código QR";
+            }
+        }, 3000);
+    }
+
+    function showResult(isOk, message) {
+        statusContainer.className = "status-card " + (isOk ? "ok" : "err");
+        statusText.innerHTML = "<b>" + message + "</b>";
+        // Feedback de vibración (solo Android/algunos iPhone)
+        if (navigator.vibrate) navigator.vibrate(200);
+    }
+
+    // 4. Iniciar Cámara con configuración Pro
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", 
+        { 
+            fps: 15, 
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0 
+        }
+    );
+    html5QrcodeScanner.render(onScanSuccess);
+  </script>
+</body>
+</html>
