@@ -125,7 +125,7 @@
         data.forEach(p => {
             const btn = document.createElement('div');
             btn.className = 'btn-precio';
-            btn.innerHTML = `<b>${p.tipo_entrada}</b><span>$${p.precio}</span>`;
+            btn.innerHTML = `<b>PEN{p.tipo_entrada}</b><span>$${p.precio}</span>`;
             
             btn.onclick = function() {
                 // Guardamos la selección y pasamos al siguiente paso
