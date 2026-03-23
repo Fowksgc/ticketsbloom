@@ -9,31 +9,45 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
   
   <style>
-    :root { --bg: #050509; --card: #10101e; --accent: #00f2fe; --border: #1f1f33; --success: #00ff88; --error: #ff4d4d; }
-    body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+    :root { 
+      --bg: #050509; --card: #10101e; --accent: #00f2fe; 
+      --border: #1f1f33; --success: #00ff88; --error: #ff4d4d; 
+    }
+    
+    body { 
+      font-family: -apple-system, sans-serif; background: var(--bg); color: white; 
+      margin: 0; display: flex; flex-direction: column; align-items: center; 
+      min-height: 100vh; padding: 20px; box-sizing: border-box; 
+    }
     
     h2 { color: var(--accent); letter-spacing: 4px; font-size: 1.1rem; margin-bottom: 5px; }
     .mode-tag { font-size: 10px; color: #666; margin-bottom: 20px; letter-spacing: 2px; }
 
-    /* Cámara */
-    #reader { width: 100%; max-width: 350px; border-radius: 25px; overflow: hidden; border: 1px solid var(--border); background: #000; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-    
-    /* Tarjeta de Resultado */
-    .result-card { 
-      margin-top: 25px; width: 100%; max-width: 350px; padding: 25px; border-radius: 20px; 
-      background: var(--card); border: 1px solid var(--border); text-align: center; 
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    /* CONTENEDOR DE CÁMARA */
+    #reader { 
+      width: 100%; max-width: 350px; border-radius: 25px; overflow: hidden; 
+      border: 1px solid var(--border); background: #000; position: relative;
     }
     
-    .status-title { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; color: #888; }
-    .client-name { font-size: 22px; font-weight: 800; margin-bottom: 5px; display: block; }
-    .ticket-type { font-size: 14px; color: var(--accent); opacity: 0.8; }
-
-    /* Estados visuales */
-    .access-granted { background: var(--success); color: #000; border: none; box-shadow: 0 0 40px rgba(0,255,136,0.3); transform: scale(1.05); }
-    .access-denied { background: var(--error); color: white; border: none; box-shadow: 0 0 40px rgba(255,77,77,0.3); }
+    /* PANEL DE RESULTADOS */
+    .result-card { 
+      margin-top: 25px; width: 100%; max-width: 350px; padding: 25px; border-radius: 22px; 
+      background: var(--card); border: 1px solid var(--border); text-align: center; 
+      transition: all 0.3s ease; 
+    }
     
-    .btn-reload { margin-top: 30px; background: none; border: 1px solid var(--border); color: #666; padding: 10px 20px; border-radius: 12px; font-size: 12px; cursor: pointer; }
+    .status-title { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; color: #888; }
+    .client-name { font-size: 24px; font-weight: 900; margin-bottom: 5px; display: block; text-transform: uppercase; }
+    .ticket-type { font-size: 14px; color: var(--accent); font-weight: 600; }
+
+    /* ESTADOS VISUALES */
+    .access-granted { background: var(--success) !important; color: #000 !important; border: none; box-shadow: 0 0 30px rgba(0,255,136,0.4); }
+    .access-denied { background: var(--error) !important; color: white !important; border: none; box-shadow: 0 0 30px rgba(255,77,77,0.4); }
+    
+    .btn-action { 
+      margin-top: 25px; background: var(--input-bg); border: 1px solid var(--border); 
+      color: #888; padding: 12px 25px; border-radius: 12px; font-size: 12px; cursor: pointer; 
+    }
   </style>
 </head>
 <body>
@@ -49,4 +63,95 @@
     <span id="display-type" class="ticket-type">Enfoque un código QR</span>
   </div>
 
-  <button class="btn-reload" onclick="location.reload()">Reiniciar Cámara
+  <button class="btn-action" onclick="location.reload()">Reiniciar Cámara</button>
+
+  <script>
+    // 1. CONFIGURACIÓN (REEMPLAZA CON TUS LLAVES)
+    const SUPABASE_URL = 'TU_URL_AQUÍ'; 
+    const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const panel = document.getElementById('result-panel');
+    const label = document.getElementById('status-label');
+    const nameTxt = document.getElementById('display-name');
+    const typeTxt = document.getElementById('display-type');
+
+    // 2. INICIAR SCANNER (FORZADO PARA IPHONE)
+    const html5QrCode = new Html5Qrcode("reader");
+    const config = { fps: 20, qrbox: { width: 250, height: 250 } };
+
+    html5QrCode.start(
+        { facingMode: "environment" }, // Forzar cámara trasera
+        config,
+        onScanSuccess
+    ).catch(err => {
+        console.error("Cámara bloqueada:", err);
+        document.getElementById('reader').innerHTML = `<p style="padding:20px; text-align:center; font-size:12px; color:#666;">Permite el acceso a la cámara en Safari e intenta de nuevo.</p>`;
+    });
+
+    // 3. LÓGICA DE VALIDACIÓN
+    async function onScanSuccess(decodedText) {
+        // Pausar inmediatamente para no duplicar escaneos
+        await html5QrCode.pause();
+        
+        // El QR tiene formato: NOMBRE|CODIGO
+        const parts = decodedText.split('|');
+        const nombreLeido = parts[0] || "Ticket Desconocido";
+
+        label.innerText = "VERIFICANDO...";
+        nameTxt.innerText = nombreLeido;
+
+        try {
+            // Consultar en Supabase
+            const { data: ticket, error } = await _supabase
+                .from('tickets')
+                .select('*')
+                .eq('codigo_qr', decodedText)
+                .single();
+
+            if (error || !ticket) {
+                showAccess(false, "ERROR", "TICKET NO EXISTE");
+            } else if (ticket.usado) {
+                showAccess(false, "DENEGADO", "YA FUE USADO");
+            } else {
+                // ÉXITO: Marcar como usado en DB
+                const { error: updError } = await _supabase
+                    .from('tickets')
+                    .update({ usado: true })
+                    .eq('codigo_qr', decodedText);
+
+                if(updError) throw updError;
+                
+                showAccess(true, "PERMITIDO", ticket.tipo_entrada);
+            }
+        } catch (e) {
+            showAccess(false, "ERROR", "SIN CONEXIÓN");
+        }
+
+        // Reanudar después de 3 segundos
+        setTimeout(async () => {
+            resetPanel();
+            await html5QrCode.resume();
+        }, 3000);
+    }
+
+    function showAccess(granted, status, detail) {
+        panel.className = "result-card " + (granted ? "access-granted" : "access-denied");
+        label.innerText = status;
+        typeTxt.innerText = detail;
+        if (granted) label.style.color = "#000";
+        
+        // Vibración de éxito o error
+        if (navigator.vibrate) navigator.vibrate(granted ? 200 : [100, 50, 100]);
+    }
+
+    function resetPanel() {
+        panel.className = "result-card";
+        label.innerText = "Esperando Escaneo...";
+        label.style.color = "#888";
+        nameTxt.innerText = "---";
+        typeTxt.innerText = "Enfoque un código QR";
+    }
+  </script>
+</body>
+</html>
