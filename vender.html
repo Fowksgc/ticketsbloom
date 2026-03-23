@@ -83,8 +83,8 @@
         <label>Nombre Completo (Aparecerá en el QR)</label>
         <input type="text" id="nombre-cliente" placeholder="Nombre del cliente">
 
-        <label>WhatsApp (con código de país)</label>
-        <input type="tel" id="whatsapp-cliente" placeholder="+51 999 999 999">
+        <label>WhatsApp</label>
+        <input type="tel" id="whatsapp-cliente" placeholder="Número">
 
         <button class="btn-main" onclick="generarVenta()">Finalizar y Crear QR</button>
         <button class="btn-back" onclick="irAPaso(1)">← Cambiar tipo de entrada</button>
@@ -179,14 +179,15 @@
             correctLevel : QRCode.CorrectLevel.H // Alta corrección para que sea fácil de leer
         });
 
-        document.getElementById('info-final').innerHTML = `<b>${nombre}</b><br>${entradaSeleccionada}<br><small>${codigoUnico}</small>`;
+       document.getElementById('info-final').innerHTML = `<b>${nombre}</b><br><span style="color:var(--accent); font-size:12px;">${entradaSeleccionada}</span>`;
     }
 
     function enviarWhatsApp() {
-        const mensaje = `¡Hola ${datosTicket.nombre}! Aquí tienes tu entrada para el evento.%0A%0A*Ticket:* ${datosTicket.entrada}%0A%0APresenta este mensaje en la puerta.`;
-        const url = `https://wa.me/${datosTicket.whatsapp.replace(/\D/g,'')}?text=${mensaje}`;
-        window.open(url, '_blank');
-    }
+    // Hemos quitado la línea de *Código:* del mensaje
+    const mensaje = `¡Hola ${datosTicket.nombre}! Aquí tienes tu entrada para el evento.%0A%0A*Ticket:* ${datosTicket.entrada}%0A%0APresenta este código QR en la puerta.`;
+    const url = `https://wa.me/${datosTicket.whatsapp.replace(/\D/g,'')}?text=${mensaje}`;
+    window.open(url, '_blank');
+}
 
     window.onload = cargarPrecios;
 </script>
