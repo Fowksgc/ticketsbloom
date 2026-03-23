@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TicketsBloom - Generar Ticket</title>
+  <title>TicketsBloom - Selección</title>
   
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
-    /* REPLICANDO TU ESTÉTICA DARK PREMIUM */
     :root {
       --bg: #050509;
       --card: #10101e;
@@ -26,7 +24,8 @@
       margin: 0;
       display: flex;
       justify-content: center;
-      padding-top: 30px;
+      align-items: center;
+      min-height: 100vh;
     }
 
     .container {
@@ -34,109 +33,63 @@
       max-width: 400px;
       background: var(--card);
       padding: 30px;
-      border-radius: 25px;
+      border-radius: 28px;
       border: 1px solid var(--border);
       box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      text-align: center;
     }
 
-    h2 { color: var(--accent); text-align: center; letter-spacing: 3px; font-size: 1.4rem; margin-bottom: 5px; }
-    .subtitle { text-align: center; color: #666; font-size: 11px; margin-bottom: 25px; letter-spacing: 1px; }
+    h2 { color: var(--accent); letter-spacing: 4px; font-size: 1.4rem; margin-bottom: 5px; text-transform: uppercase; }
+    .subtitle { color: #666; font-size: 11px; margin-bottom: 30px; letter-spacing: 1px; }
 
-    .field { margin-bottom: 20px; }
-    label { display: block; font-size: 11px; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
-    
-    input[type="text"] {
-      width: 100%;
-      padding: 15px;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: white;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
+    label { display: block; font-size: 12px; color: var(--accent); margin-bottom: 15px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
 
-    /* CONTENEDOR DE BOTONES (Igual a tu diseño anterior) */
+    /* GRID DE BOTONES - ESTILO GOOGLE SCRIPTS */
     .grid-precios {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 15px;
     }
 
     .btn-precio {
       background: var(--input-bg);
       border: 1px solid var(--border);
-      padding: 15px 10px;
-      border-radius: 12px;
+      padding: 25px 10px;
+      border-radius: 18px;
       color: white;
       cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
-    .btn-precio b { display: block; font-size: 14px; margin-bottom: 4px; }
-    .btn-precio span { font-size: 12px; opacity: 0.6; }
+    .btn-precio b { font-size: 16px; margin-bottom: 5px; text-transform: uppercase; }
+    .btn-precio span { font-size: 13px; opacity: 0.5; font-weight: bold; }
 
-    /* Estado seleccionado (Neón) */
-    .btn-precio.selected {
+    /* Efecto de selección / Hover */
+    .btn-precio:active, .btn-precio.selected {
       border-color: var(--accent);
       background: rgba(0, 242, 254, 0.1);
-      box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
+      transform: scale(0.98);
     }
 
-    .btn-main {
-      width: 100%;
-      padding: 18px;
-      background: linear-gradient(135deg, #007aff, var(--accent));
-      border: none;
-      border-radius: 15px;
-      color: #000;
-      font-weight: 800;
-      font-size: 15px;
-      margin-top: 20px;
-      cursor: pointer;
-      text-transform: uppercase;
-    }
-
-    /* QR SECCIÓN */
-    #qr-result {
-      display: none;
-      text-align: center;
-      margin-top: 20px;
-      background: white;
-      padding: 20px;
-      border-radius: 20px;
-    }
-
-    #qrcode { display: inline-block; margin-bottom: 15px; }
-    .info-final { color: #000; font-size: 13px; font-weight: bold; line-height: 1.4; }
+    #loading-msg { color: var(--accent); font-size: 12px; font-style: italic; }
   </style>
 </head>
 <body>
 
 <div class="container">
     <h2>TICKETSBLOOM</h2>
-    <div class="subtitle" id="promotor-tag">CARGANDO...</div>
+    <div class="subtitle" id="promotor-tag">SESIÓN INICIADA</div>
 
-    <div id="form-venta">
-        <div class="field">
-            <label>Nombre del Cliente</label>
-            <input type="text" id="nombre-cliente" placeholder="Ej. Juan Pérez">
+    <div class="field">
+        <label>Selecciona tipo de entrada</label>
+        <div id="grid-precios" class="grid-precios">
+            <div id="loading-msg">Cargando tickets desde la base de datos...</div>
         </div>
-
-        <div class="field">
-            <label>Tipo de Entrada</label>
-            <div id="grid-precios" class="grid-precios">
-                </div>
-        </div>
-
-        <button class="btn-main" onclick="generarVenta()">Generar Ticket QR</button>
-    </div>
-
-    <div id="qr-result">
-        <div id="qrcode"></div>
-        <div class="info-final" id="info-final"></div>
-        <button onclick="location.reload()" style="margin-top:15px; background:none; border:1px solid #ccc; padding:8px 15px; border-radius:10px; font-size:11px;">Nueva Venta</button>
     </div>
 </div>
 
@@ -146,65 +99,49 @@
     const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let entradaSeleccionada = null;
     const promotor = localStorage.getItem('promotor_activo') || 'Invitado';
     document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotor.toUpperCase();
 
-    // 1. CARGAR BOTONES DESDE TABLA PRECIOS
+    // 1. CARGAR BOTONES DINÁMICAMENTE
     async function cargarPrecios() {
         const grid = document.getElementById('grid-precios');
+        
+        // Consultamos la tabla 'precios'
         const { data, error } = await _supabase.from('precios').select('*');
 
         if (error) {
-            grid.innerHTML = "<p>Error al conectar</p>";
+            console.error("Error Supabase:", error);
+            grid.innerHTML = "<p style='color:red;'>Error al cargar. Revisa las políticas RLS.</p>";
             return;
         }
 
-        grid.innerHTML = "";
+        if (data.length === 0) {
+            grid.innerHTML = "<p>No hay precios configurados.</p>";
+            return;
+        }
+
+        grid.innerHTML = ""; // Limpiar mensaje de carga
+
         data.forEach(p => {
             const btn = document.createElement('div');
             btn.className = 'btn-precio';
             btn.innerHTML = `<b>${p.tipo_entrada}</b><span>$${p.precio}</span>`;
+            
             btn.onclick = function() {
-                document.querySelectorAll('.btn-precio').forEach(b => b.classList.remove('selected'));
+                // Guardamos la selección y pasamos al siguiente paso
+                localStorage.setItem('ticket_seleccionado', p.tipo_entrada);
+                localStorage.setItem('precio_seleccionado', p.precio);
+                
+                // Efecto visual rápido antes de cambiar de página
                 btn.classList.add('selected');
-                entradaSeleccionada = p.tipo_entrada;
+                
+                setTimeout(() => {
+                    // Aquí rediriges a la página donde pides el nombre
+                    window.location.href = "cliente.html"; 
+                }, 200);
             };
             grid.appendChild(btn);
         });
-    }
-
-    // 2. PROCESAR VENTA
-    async function generarVenta() {
-        const nombre = document.getElementById('nombre-cliente').value.trim();
-        if(!nombre || !entradaSeleccionada) {
-            alert("Completa el nombre y selecciona una entrada.");
-            return;
-        }
-
-        const codigo = "TB-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-
-        const { error } = await _supabase.from('tickets').insert([{
-            codigo_qr: codigo,
-            nombre_cliente: nombre,
-            tipo_entrada: entradaSeleccionada,
-            promotor: promotor,
-            usado: false
-        }]);
-
-        if (error) {
-            alert("Error al guardar: " + error.message);
-        } else {
-            document.getElementById('form-venta').style.display = 'none';
-            document.getElementById('qr-result').style.display = 'block';
-            
-            new QRCode(document.getElementById("qrcode"), {
-                text: codigo, width: 180, height: 180
-            });
-
-            document.getElementById('info-final').innerHTML = 
-                `CLIENTE: ${nombre}<br>ENTRADA: ${entradaSeleccionada}<br>ID: ${codigo}`;
-        }
     }
 
     window.onload = cargarPrecios;
