@@ -74,6 +74,28 @@
       // O puedes enviarlo directo al scanner si prefieres
       window.location.href = "vender.html"; 
     }
+
+    async function cargarPromotores() {
+    const select = document.getElementById('promotor-select');
+    
+    // Consultamos solo los promotores activos
+    const { data, error } = await _supabase
+        .from('promotores')
+        .select('nombre')
+        .eq('activo', true);
+
+    if (error) return console.error("Error cargando promotores:", error);
+
+    data.forEach(p => {
+        let opt = document.createElement('option');
+        opt.value = p.nombre;
+        opt.innerHTML = p.nombre;
+        select.appendChild(opt);
+    });
+}
+
+// Llamar a la función al cargar la página
+window.onload = cargarPromotores;
   </script>
 </body>
 </html>
