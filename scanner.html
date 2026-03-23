@@ -74,4 +74,38 @@
 
         if (error || !ticket) {
             updateUI(false, "ERROR", "TICKET INVÁLIDO");
-        } else
+        } else if (ticket.usado) {
+            updateUI(false, "DENEGADO", "YA INGRESÓ");
+        } else {
+            await _supabase.from('tickets').update({ usado: true }).eq('codigo_qr', decodedText);
+            updateUI(true, "PERMITIDO", ticket.tipo_entrada);
+        }
+
+        setTimeout(async () => {
+            resetUI();
+            await html5QrCode.resume();
+        }, 3000);
+    }
+
+    function updateUI(granted, status, detail) {
+        const panel = document.getElementById('result-panel');
+        panel.style.background = granted ? "var(--success)" : "var(--error)";
+        panel.style.color = granted ? "#000" : "#fff";
+        document.getElementById('display-type').innerText = detail;
+        document.getElementById('display-type').style.color = granted ? "#000" : "#fff";
+        document.getElementById('status-label').innerText = status;
+        if (navigator.vibrate) navigator.vibrate(granted ? 200 : [100, 50, 100]);
+    }
+
+    function resetUI() {
+        const panel = document.getElementById('result-panel');
+        panel.style.background = "var(--card)";
+        panel.style.color = "#fff";
+        document.getElementById('status-label').innerText = "ESPERANDO...";
+        document.getElementById('display-name').innerText = "---";
+        document.getElementById('display-type').innerText = "Enfoque el QR";
+        document.getElementById('display-type').style.color = "var(--accent)";
+    }
+  </script>
+</body>
+</html>
