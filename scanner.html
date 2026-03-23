@@ -3,53 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TicketsBloom - Scanner Fix</title>
+    <title>TicketsBloom - Scanner Pro</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
     <style>
         :root { --bg: #050509; --accent: #00f2fe; --card: #10101e; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; text-align: center; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; text-align: center; overflow: hidden; }
         
-        /* FUERZA AL CONTENEDOR A TENER ALTURA */
         #container-cam { 
-            position: relative; 
-            width: 100%; 
-            height: 70vh; /* 70% de la pantalla */
-            background: #000; 
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-bottom: 2px solid #1f1f33;
+            position: relative; width: 100%; height: 65vh; 
+            background: #000; overflow: hidden; display: flex;
+            align-items: center; justify-content: center;
+            border-bottom: 1px solid #1f1f33;
         }
 
-        video { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; /* Importante para que no se deforme */
-            display: block;
-        }
+        video { width: 100%; height: 100%; object-fit: cover; display: block; }
 
         .scanner-overlay { 
-            position: absolute; width: 200px; height: 200px; 
-            border: 2px solid var(--accent); border-radius: 20px; 
-            box-shadow: 0 0 0 4000px rgba(0,0,0,0.5); pointer-events: none; 
-            z-index: 5;
+            position: absolute; width: 220px; height: 220px; 
+            border: 2px solid var(--accent); border-radius: 25px; 
+            box-shadow: 0 0 0 4000px rgba(0,0,0,0.6); pointer-events: none; z-index: 5;
         }
         
         .btn-init { 
-            background: var(--accent); color: #000; border: none; padding: 20px; 
-            width: 80%; border-radius: 15px; font-weight: 800; margin-top: 20px;
-            box-shadow: 0 10px 30px rgba(0,242,254,0.3);
+            background: var(--accent); color: #000; border: none; padding: 22px; 
+            width: 85%; border-radius: 18px; font-weight: 900; margin-top: 25px;
+            font-size: 15px; letter-spacing: 1px; box-shadow: 0 10px 30px rgba(0,242,254,0.3);
         }
 
         #result-box { 
-            position: fixed; bottom: 20px; left: 5%; width: 90%; 
-            padding: 20px; border-radius: 20px; background: var(--card); 
+            position: fixed; bottom: 25px; left: 5%; width: 90%; 
+            padding: 25px; border-radius: 25px; background: var(--card); 
             display: none; z-index: 100; border: 1px solid #333;
+            animation: slideIn 0.3s ease-out;
         }
+        @keyframes slideIn { from { transform: translateY(100px); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -62,22 +52,30 @@
     <button id="btn-start" class="btn-init" onclick="initCamara()">ACTIVAR ESCÁNER</button>
 
     <div id="result-box">
-        <div id="res-status" style="font-size:10px; color:#888;">ESTADO</div>
-        <div id="res-name" style="font-size:20px; font-weight:bold;">---</div>
-        <div id="res-type" style="color:var(--accent);">---</div>
+        <div id="res-status" style="font-size:10px; color:#888; text-transform:uppercase; letter-spacing:2px;">Estado</div>
+        <div id="res-name" style="font-size:22px; font-weight:bold; margin: 5px 0;">---</div>
+        <div id="res-type" style="color:var(--accent); font-weight:600;">---</div>
     </div>
 
     <script>
+        // 1. VARIABLES GLOBALES (Se inicializan solas al cargar)
         const SUPABASE_URL = 'TU_URL_AQUÍ'; 
         const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const video = document.getElementById("video");
-        const canvasElement = document.createElement("canvas");
-        const canvas = canvasElement.getContext("2d");
-        let scanning = false;
+        let video, canvasElement, canvas, scanning = false;
 
+        // 2. ESPERAR A QUE EL DOM ESTÉ LISTO
+        document.addEventListener("DOMContentLoaded", () => {
+            video = document.getElementById("video");
+            canvasElement = document.createElement("canvas");
+            canvas = canvasElement.getContext("2d");
+        });
+
+        // 3. INICIAR CÁMARA
         async function initCamara() {
+            if (!video) return alert("Error: El sistema no ha cargado. Refresca la página.");
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
@@ -85,7 +83,6 @@
                 
                 video.srcObject = stream;
                 
-                // FORZAMOS LA REPRODUCCIÓN (Esto es lo que te faltaba)
                 video.onloadedmetadata = () => {
                     video.play();
                     scanning = true;
@@ -93,12 +90,14 @@
                     requestAnimationFrame(tick);
                 };
             } catch (err) {
-                alert("Error de cámara: " + err.message);
+                alert("Error de cámara: Asegúrate de usar HTTPS y dar permisos.");
+                console.error(err);
             }
         }
 
+        // 4. BUCLE DE ESCANEO
         function tick() {
-            if (video.readyState === video.HAVE_ENOUGH_DATA && scanning) {
+            if (video && video.readyState === video.HAVE_ENOUGH_DATA && scanning) {
                 canvasElement.height = video.videoHeight;
                 canvasElement.width = video.videoWidth;
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
@@ -114,32 +113,46 @@
             if (scanning) requestAnimationFrame(tick);
         }
 
+        // 5. VALIDACIÓN CON SUPABASE
         async function validarTicket(codigo) {
             const box = document.getElementById('result-box');
+            const nameTxt = document.getElementById('res-name');
+            const statusTxt = document.getElementById('res-status');
+            const typeTxt = document.getElementById('res-type');
+
             box.style.display = 'block';
-            document.getElementById('res-name').innerText = codigo.split('|')[0];
+            nameTxt.innerText = codigo.split('|')[0] || "Ticket";
 
             try {
                 const { data, error } = await _supabase.from('tickets').select('*').eq('codigo_qr', codigo).single();
 
                 if (error || !data) {
-                    showUI(false, "INVÁLIDO");
+                    renderUI(false, "INVÁLIDO", "TICKET NO EXISTE");
                 } else if (data.usado) {
-                    showUI(false, "YA USADO");
+                    renderUI(false, "DENEGADO", "YA FUE USADO");
                 } else {
                     await _supabase.from('tickets').update({ usado: true }).eq('codigo_qr', codigo);
-                    showUI(true, data.tipo_entrada);
+                    renderUI(true, "PERMITIDO", data.tipo_entrada);
                 }
-            } catch (e) { showUI(false, "ERROR RED"); }
+            } catch (e) { 
+                renderUI(false, "ERROR", "FALLO DE RED"); 
+            }
 
-            setTimeout(() => { box.style.display = 'none'; scanning = true; requestAnimationFrame(tick); }, 3000);
+            // Reiniciar tras 3.5 segundos
+            setTimeout(() => { 
+                box.style.display = 'none'; 
+                scanning = true; 
+                requestAnimationFrame(tick); 
+            }, 3500);
         }
 
-        function showUI(ok, detail) {
+        function renderUI(ok, status, detail) {
             const box = document.getElementById('result-box');
             box.style.background = ok ? "#00ff88" : "#ff4d4d";
             box.style.color = ok ? "#000" : "#fff";
+            document.getElementById('res-status').innerText = status;
             document.getElementById('res-type').innerText = detail;
+            document.getElementById('res-type').style.color = ok ? "#000" : "#fff";
             if (navigator.vibrate) navigator.vibrate(ok ? 200 : [100, 50, 100]);
         }
     </script>
