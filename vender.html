@@ -80,7 +80,7 @@
     <div id="step-2" class="step">
         <label id="label-seleccionada" style="color: #fff; background: rgba(0,242,254,0.1); padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 20px; border: 1px dashed var(--accent);"></label>
         
-        <label>Nombre Completo</label>
+        <label>Nombre Completo (Aparecerá en el QR)</label>
         <input type="text" id="nombre-cliente" placeholder="Nombre del cliente">
 
         <label>WhatsApp (con código de país)</label>
@@ -102,7 +102,7 @@
 
 <script>
     const SUPABASE_URL = 'https://nakrilawyrppxvjnrbks.supabase.co/'; 
-    const SUPABASE_KEY = 'sb_publishable_JJGnQbTeKrQ8m02e76pZpg_nJ9lGp0m';
+    const SUPABASE_KEY = 'API Key: sb_publishable_JJGnQbTeKrQ8m02e76pZpg_nJ9lGp0m';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let entradaSeleccionada = null;
@@ -136,33 +136,54 @@
     }
 
     async function generarVenta() {
-        const nombre = document.getElementById('nombre-cliente').value.trim();
+        const nombreRaw = document.getElementById('nombre-cliente').value.trim();
         const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
         
+        // Normalizamos el nombre (limpiamos espacios y mayúsculas)
+        const nombre = nombreRaw.toUpperCase();
+
         if(!nombre || !whatsapp) return alert("Completa todos los datos");
 
-        const codigo = "TB-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+        // Generamos un código único aleatorio corto
+        const codigoUnico = Math.random().toString(36).substr(2, 6).toUpperCase();
 
+        // **ESTA ES LA LÍNEA CLAVE**: El QR contendrá el nombre y el código
+        // Usamos el símbolo "|" como separador
+        const textoParaQR = `${nombre}|${codigoUnico}`;
+
+        // Guardamos en Supabase (usamos 'textoParaQR' como el ID único)
         const { error } = await _supabase.from('tickets').insert([{
-            codigo_qr: codigo,
+            codigo_qr: textoParaQR, // <- Guardamos la cadena completa
             nombre_cliente: nombre,
-            whatsapp: whatsapp, // Asegúrate de crear esta columna en Supabase
+            whatsapp: whatsapp,
             tipo_entrada: entradaSeleccionada,
             promotor: promotor,
             usado: false
         }]);
 
-        if (error) return alert("Error: " + error.message);
+        if (error) {
+            // Si el nombre ya existe, Supabase dará error de unicidad
+            // (puedes ajustar esto si quieres permitir nombres duplicados)
+            return alert("Error al generar el ticket. Intenta de nuevo.");
+        }
 
-        datosTicket = { nombre, codigo, whatsapp, entrada: entradaSeleccionada };
+        datosTicket = { nombre, codigo: textoParaQR, whatsapp, entrada: entradaSeleccionada };
 
         irAPaso(3);
-        new QRCode(document.getElementById("qrcode"), { text: codigo, width: 180, height: 180 });
-        document.getElementById('info-final').innerHTML = `<b>${nombre}</b><br>${entradaSeleccionada}<br><small>${codigo}</small>`;
+        
+        // Generamos el QR FÍSICAMENTE con el nombre incluido
+        new QRCode(document.getElementById("qrcode"), { 
+            text: textoParaQR, 
+            width: 180, 
+            height: 180,
+            correctLevel : QRCode.CorrectLevel.H // Alta corrección para que sea fácil de leer
+        });
+
+        document.getElementById('info-final').innerHTML = `<b>${nombre}</b><br>${entradaSeleccionada}<br><small>${codigoUnico}</small>`;
     }
 
     function enviarWhatsApp() {
-        const mensaje = `¡Hola ${datosTicket.nombre}! Aquí tienes tu entrada para el evento.%0A%0A*Ticket:* ${datosTicket.entrada}%0A*Código:* ${datosTicket.codigo}%0A%0APresenta este mensaje en la puerta.`;
+        const mensaje = `¡Hola ${datosTicket.nombre}! Aquí tienes tu entrada para el evento.%0A%0A*Ticket:* ${datosTicket.entrada}%0A%0APresenta este mensaje en la puerta.`;
         const url = `https://wa.me/${datosTicket.whatsapp.replace(/\D/g,'')}?text=${mensaje}`;
         window.open(url, '_blank');
     }
