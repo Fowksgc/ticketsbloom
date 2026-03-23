@@ -3,165 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TicketsBloom - Scanner Oficial</title>
-  
+  <title>TicketsBloom - Scanner Fix</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
-  
   <style>
-    :root { 
-      --bg: #050509; --card: #10101e; --accent: #00f2fe; 
-      --border: #1f1f33; --success: #00ff88; --error: #ff4d4d; 
-    }
-    
-    body { 
-      font-family: -apple-system, sans-serif; background: var(--bg); color: white; 
-      margin: 0; display: flex; flex-direction: column; align-items: center; 
-      min-height: 100vh; padding: 20px; box-sizing: border-box; 
-    }
-    
-    h2 { color: var(--accent); letter-spacing: 4px; font-size: 1.2rem; margin-top: 10px; }
-    .mode-tag { font-size: 10px; color: #666; margin-bottom: 20px; letter-spacing: 2px; }
-
-    /* CONTENEDOR DE CÁMARA */
-    #reader { 
-      width: 100%; max-width: 350px; border-radius: 25px; overflow: hidden; 
-      border: 1px solid var(--border); background: #000; min-height: 250px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    
-    /* BOTÓN INICIAL PARA SAFARI */
-    .btn-start {
-      background: linear-gradient(135deg, #007aff, var(--accent));
-      border: none; padding: 20px; border-radius: 15px; color: #000;
-      font-weight: 800; font-size: 14px; cursor: pointer; text-transform: uppercase;
-      width: 80%; box-shadow: 0 10px 20px rgba(0, 242, 254, 0.3);
-    }
-
-    /* PANEL DE RESULTADOS */
-    .result-card { 
-      margin-top: 25px; width: 100%; max-width: 350px; padding: 25px; border-radius: 22px; 
-      background: var(--card); border: 1px solid var(--border); text-align: center; 
-      transition: all 0.3s ease; 
-    }
-    
-    .status-title { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; color: #888; }
-    .client-name { font-size: 24px; font-weight: 900; margin-bottom: 5px; display: block; text-transform: uppercase; }
-    .ticket-type { font-size: 14px; color: var(--accent); font-weight: 600; }
-
-    /* ESTADOS VISUALES */
-    .access-granted { background: var(--success) !important; color: #000 !important; border: none; box-shadow: 0 0 30px rgba(0,255,136,0.5); }
-    .access-denied { background: var(--error) !important; color: white !important; border: none; box-shadow: 0 0 30px rgba(255,77,77,0.5); }
-    
-    .btn-reset { margin-top: 20px; background: none; border: 1px solid #333; color: #555; padding: 10px; border-radius: 10px; font-size: 11px; cursor: pointer; }
+    :root { --bg: #050509; --card: #10101e; --accent: #00f2fe; --border: #1f1f33; --success: #00ff88; --error: #ff4d4d; }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+    #reader { width: 100%; max-width: 350px; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); background: #000; min-height: 250px; }
+    .btn-start { background: var(--accent); border: none; padding: 15px; border-radius: 12px; color: #000; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 10px; }
+    .result-card { margin-top: 20px; width: 100%; max-width: 350px; padding: 20px; border-radius: 20px; background: var(--card); border: 1px solid var(--border); text-align: center; }
+    select { width: 100%; padding: 10px; background: #111; color: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; display: none; }
   </style>
 </head>
 <body>
 
-  <h2>TICKETSBLOOM</h2>
-  <div class="mode-tag">CONTROL DE ACCESO • PUERTA</div>
-
-  <div id="reader">
-      <button id="btn-activar" class="btn-start" onclick="iniciarEscaner()">Activar Cámara Trasera</button>
-  </div>
+  <h2 style="color:var(--accent); letter-spacing:3px;">TICKETSBLOOM</h2>
+  
+  <select id="camera-select"></select>
+  
+  <div id="reader"></div>
+  
+  <button id="btn-iniciar" class="btn-start" onclick="prepararCamara()">ENCENDER CÁMARA</button>
 
   <div id="result-panel" class="result-card">
-    <div id="status-label" class="status-title">Esperando Cámara...</div>
-    <span id="display-name" class="client-name">---</span>
-    <span id="display-type" class="ticket-type">Presiona el botón azul</span>
+    <div id="status-label" style="font-size:10px; color:#888;">ESTADO: ESPERANDO</div>
+    <div id="display-name" style="font-size:20px; font-weight:bold; margin:10px 0;">---</div>
+    <div id="display-type" style="color:var(--accent);">Enfoque el QR</div>
   </div>
 
-  <button class="btn-reset" onclick="location.reload()">Recargar Aplicación</button>
-
   <script>
-    // 1. CONFIGURACIÓN (REEMPLAZA CON TUS LLAVES)
     const SUPABASE_URL = 'TU_URL_AQUÍ'; 
     const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const panel = document.getElementById('result-panel');
-    const label = document.getElementById('status-label');
-    const nameTxt = document.getElementById('display-name');
-    const typeTxt = document.getElementById('display-type');
-    
     let html5QrCode;
 
-    // 2. FUNCIÓN PARA ARRANCAR LA CÁMARA (INTERACCIÓN REQUERIDA POR SAFARI)
-    async function iniciarEscaner() {
-        document.getElementById('btn-activar').innerText = "Iniciando...";
+    async function prepararCamara() {
+        const btn = document.getElementById('btn-iniciar');
+        btn.innerText = "CARGANDO LENTES...";
         
-        html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 20, qrbox: { width: 250, height: 250 } };
-
         try {
-            await html5QrCode.start(
-                { facingMode: "environment" }, 
-                config,
-                onScanSuccess
-            );
-            // Si inicia bien, limpiamos el botón y actualizamos status
-            document.getElementById('status-label').innerText = "Esperando Escaneo...";
-            document.getElementById('display-type').innerText = "Enfoque un código QR";
-        } catch (err) {
-            alert("Error: Debes permitir el acceso a la cámara en Safari.");
-            console.error(err);
-            document.getElementById('btn-activar').innerText = "Error - Reintentar";
-        }
-    }
-
-    // 3. LÓGICA DE VALIDACIÓN
-    async function onScanSuccess(decodedText) {
-        // Pausar inmediatamente
-        await html5QrCode.pause();
-        
-        const parts = decodedText.split('|');
-        const nombreLeido = parts[0] || "Desconocido";
-
-        label.innerText = "VERIFICANDO...";
-        nameTxt.innerText = nombreLeido;
-
-        try {
-            const { data: ticket, error } = await _supabase
-                .from('tickets')
-                .select('*')
-                .eq('codigo_qr', decodedText)
-                .single();
-
-            if (error || !ticket) {
-                showAccess(false, "ERROR", "TICKET NO VÁLIDO");
-            } else if (ticket.usado) {
-                showAccess(false, "DENEGADO", "YA FUE USADO");
-            } else {
-                // ÉXITO
-                await _supabase.from('tickets').update({ usado: true }).eq('codigo_qr', decodedText);
-                showAccess(true, "PERMITIDO", ticket.tipo_entrada);
+            // 1. Pedir permisos y listar cámaras
+            const devices = await Html5Qrcode.getCameras();
+            
+            if (devices && devices.length) {
+                html5QrCode = new Html5Qrcode("reader");
+                
+                // Intentamos usar la cámara trasera directamente ("environment")
+                const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+                
+                await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+                btn.style.display = "none";
             }
-        } catch (e) {
-            showAccess(false, "ERROR", "SIN CONEXIÓN");
+        } catch (err) {
+            console.error(err);
+            btn.innerText = "ERROR - REINTENTAR";
+            alert("Safari bloqueó la cámara. Ve a Ajustes > Safari > Cámara > Permitir.");
         }
-
-        // Reanudar después de 3 segundos
-        setTimeout(async () => {
-            resetPanel();
-            await html5QrCode.resume();
-        }, 3000);
     }
 
-    function showAccess(granted, status, detail) {
-        panel.className = "result-card " + (granted ? "access-granted" : "access-denied");
-        label.innerText = status;
-        typeTxt.innerText = detail;
-        if (granted) label.style.color = "#000";
-        if (navigator.vibrate) navigator.vibrate(granted ? 200 : [100, 50, 100]);
-    }
+    async function onScanSuccess(decodedText) {
+        await html5QrCode.pause();
+        const parts = decodedText.split('|');
+        const nombre = parts[0] || "Desconocido";
+        
+        document.getElementById('status-label').innerText = "VERIFICANDO...";
+        document.getElementById('display-name').innerText = nombre;
 
-    function resetPanel() {
-        panel.className = "result-card";
-        label.innerText = "Esperando Escaneo...";
-        label.style.color = "#888";
-        nameTxt.innerText = "---";
-        typeTxt.innerText = "Enfoque un código QR";
-    }
-  </script>
-</body>
-</html>
+        const { data: ticket, error } = await _supabase.from('tickets').select('*').eq('codigo_qr', decodedText).single();
+
+        if (error || !ticket) {
+            updateUI(false, "ERROR", "TICKET INVÁLIDO");
+        } else
