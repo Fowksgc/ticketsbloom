@@ -3,162 +3,168 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TicketsBloom - Selección</title>
+  <title>TicketsBloom - Generar Ticket</title>
   
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
     :root {
-      --bg: #050509;
-      --card: #10101e;
-      --accent: #00f2fe;
-      --border: #1f1f33;
-      --text: #ffffff;
-      --input-bg: #080812;
+      --bg: #050509; --card: #10101e; --accent: #00f2fe; --border: #1f1f33; --text: #ffffff; --input-bg: #080812;
     }
 
     body {
-      font-family: -apple-system, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
+      font-family: -apple-system, sans-serif; background-color: var(--bg); color: var(--text);
+      margin: 0; display: flex; justify-content: center; padding-top: 20px;
     }
 
     .container {
-      width: 90%;
-      max-width: 400px;
-      background: var(--card);
-      padding: 30px;
-      border-radius: 28px;
-      border: 1px solid var(--border);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-      text-align: center;
+      width: 92%; max-width: 400px; background: var(--card); padding: 25px;
+      border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.6);
     }
 
-    h2 { color: var(--accent); letter-spacing: 4px; font-size: 1.4rem; margin-bottom: 5px; text-transform: uppercase; }
-    .subtitle { color: #666; font-size: 11px; margin-bottom: 30px; letter-spacing: 1px; }
+    h2 { color: var(--accent); text-align: center; letter-spacing: 3px; font-size: 1.3rem; margin: 0; }
+    .subtitle { text-align: center; color: #666; font-size: 10px; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }
 
-    label { display: block; font-size: 12px; color: var(--accent); margin-bottom: 15px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+    /* ESTADOS DE LA PANTALLA */
+    .step { display: none; animation: fadeIn 0.4s ease; }
+    .active { display: block; }
 
-    /* GRID DE BOTONES - ESTILO GOOGLE SCRIPTS */
-    .grid-precios {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+    label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+
+    /* PASO 1: BOTONES */
+    .grid-precios { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .btn-precio {
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      padding: 18px 10px; /* Un poco más de aire */
-      border-radius: 16px; /* Bordes más suaves */
-      color: white;
-      cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 5px;
+      background: var(--input-bg); border: 1px solid var(--border); padding: 20px 10px;
+      border-radius: 18px; color: white; cursor: pointer; text-align: center; transition: 0.2s;
+    }
+    .btn-precio b { display: block; font-size: 14px; margin-bottom: 5px; }
+    .btn-precio span { color: var(--accent); font-weight: bold; font-size: 15px; }
+
+    /* PASO 2: FORMULARIO */
+    input {
+      width: 100%; padding: 16px; background: var(--input-bg); border: 1px solid var(--border);
+      border-radius: 15px; color: white; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .btn-main {
+      width: 100%; padding: 18px; background: linear-gradient(135deg, #007aff, var(--accent));
+      border: none; border-radius: 16px; color: #000; font-weight: 800; font-size: 15px; cursor: pointer; text-transform: uppercase;
     }
 
-    .btn-precio b { 
-      font-size: 13px; 
-      text-transform: uppercase; 
-      letter-spacing: 1px;
+    .btn-back {
+      background: none; border: none; color: #666; font-size: 12px; width: 100%; margin-top: 15px; cursor: pointer;
     }
 
-    .btn-precio span { 
-      font-size: 15px; 
-    }
-
-    .btn-precio b { font-size: 16px; margin-bottom: 5px; text-transform: uppercase; }
-    .btn-precio span { font-size: 13px; opacity: 0.5; font-weight: bold; }
-
-    /* Efecto de selección / Hover */
-    .btn-precio:active, .btn-precio.selected {
-      border-color: var(--accent);
-      background: rgba(0, 242, 254, 0.1);
-      box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
-      transform: scale(0.98);
-    }
-
-    #loading-msg { color: var(--accent); font-size: 12px; font-style: italic; }
+    /* RESULTADO */
+    #qr-result { text-align: center; }
+    #qrcode { background: white; padding: 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; }
+    .info-final { font-size: 14px; line-height: 1.6; border-top: 1px solid #333; padding-top: 15px; }
   </style>
 </head>
 <body>
 
 <div class="container">
     <h2>TICKETSBLOOM</h2>
-    <div class="subtitle" id="promotor-tag">SESIÓN INICIADA</div>
+    <div class="subtitle" id="promotor-tag">PROMOTOR: CARGANDO...</div>
 
-    <div class="field">
-        <label>Selecciona tipo de entrada</label>
+    <div id="step-1" class="step active">
+        <label>Selecciona Tipo de Entrada</label>
         <div id="grid-precios" class="grid-precios">
-            <div id="loading-msg">Cargando tickets desde la base de datos...</div>
+            </div>
+    </div>
+
+    <div id="step-2" class="step">
+        <label id="label-seleccionada" style="color: #fff; background: rgba(0,242,254,0.1); padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 20px; border: 1px dashed var(--accent);"></label>
+        
+        <label>Nombre Completo</label>
+        <input type="text" id="nombre-cliente" placeholder="Nombre del cliente">
+
+        <label>WhatsApp (con código de país)</label>
+        <input type="tel" id="whatsapp-cliente" placeholder="+51 999 999 999">
+
+        <button class="btn-main" onclick="generarVenta()">Finalizar y Crear QR</button>
+        <button class="btn-back" onclick="irAPaso(1)">← Cambiar tipo de entrada</button>
+    </div>
+
+    <div id="step-3" class="step">
+        <div id="qr-result">
+            <div id="qrcode"></div>
+            <div class="info-final" id="info-final"></div>
+            <button class="btn-main" style="background: #25D366; color: white; margin-top: 15px;" onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
+            <button class="btn-back" onclick="location.reload()">+ Nueva Venta</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- CONFIGURACIÓN ---
     const SUPABASE_URL = 'https://nakrilawyrppxvjnrbks.supabase.co/'; 
     const SUPABASE_KEY = 'sb_publishable_JJGnQbTeKrQ8m02e76pZpg_nJ9lGp0m';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    let entradaSeleccionada = null;
+    let datosTicket = null; // Para guardar lo que se enviará por WhatsApp
     const promotor = localStorage.getItem('promotor_activo') || 'Invitado';
     document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotor.toUpperCase();
 
-    // 1. CARGAR BOTONES DINÁMICAMENTE
- // 1. CARGAR BOTONES DESDE TABLA PRECIOS (Versión Soles)
     async function cargarPrecios() {
         const grid = document.getElementById('grid-precios');
-        
-        // Llamada a Supabase
-        const { data, error } = await _supabase
-            .from('precios')
-            .select('*')
-            .order('precio', { ascending: true }); // Los ordena por precio de menor a mayor
+        const { data, error } = await _supabase.from('precios').select('*').order('precio', { ascending: true });
 
-        if (error) {
-            grid.innerHTML = "<p style='color:red; font-size:10px;'>Error de conexión</p>";
-            console.error(error);
-            return;
-        }
+        if (error) return grid.innerHTML = "<p>Error</p>";
 
-        grid.innerHTML = ""; // Limpiar el "Cargando..."
-
+        grid.innerHTML = "";
         data.forEach(p => {
             const btn = document.createElement('div');
             btn.className = 'btn-precio';
-            
-            // Formateo en Soles S/
-            btn.innerHTML = `
-                <b>${p.tipo_entrada}</b>
-                <span style="color: var(--accent); font-weight: bold;">S/ ${p.precio}</span>
-            `;
-
-            btn.onclick = function() {
-                // Quitar selección a los demás
-                document.querySelectorAll('.btn-precio').forEach(b => {
-                    b.classList.remove('selected');
-                    b.style.borderColor = "var(--border)";
-                    b.style.background = "var(--input-bg)";
-                });
-                
-                // Marcar este como seleccionado
-                btn.classList.add('selected');
-                btn.style.borderColor = "var(--accent)";
-                btn.style.background = "rgba(0, 242, 254, 0.1)";
-                
+            btn.innerHTML = `<b>${p.tipo_entrada}</b><span>S/ ${p.precio}</span>`;
+            btn.onclick = () => {
                 entradaSeleccionada = p.tipo_entrada;
+                document.getElementById('label-seleccionada').innerText = "ENTRADA: " + p.tipo_entrada.toUpperCase();
+                irAPaso(2);
             };
             grid.appendChild(btn);
         });
+    }
+
+    function irAPaso(n) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step-' + n).classList.add('active');
+    }
+
+    async function generarVenta() {
+        const nombre = document.getElementById('nombre-cliente').value.trim();
+        const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
+        
+        if(!nombre || !whatsapp) return alert("Completa todos los datos");
+
+        const codigo = "TB-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+        const { error } = await _supabase.from('tickets').insert([{
+            codigo_qr: codigo,
+            nombre_cliente: nombre,
+            whatsapp: whatsapp, // Asegúrate de crear esta columna en Supabase
+            tipo_entrada: entradaSeleccionada,
+            promotor: promotor,
+            usado: false
+        }]);
+
+        if (error) return alert("Error: " + error.message);
+
+        datosTicket = { nombre, codigo, whatsapp, entrada: entradaSeleccionada };
+
+        irAPaso(3);
+        new QRCode(document.getElementById("qrcode"), { text: codigo, width: 180, height: 180 });
+        document.getElementById('info-final').innerHTML = `<b>${nombre}</b><br>${entradaSeleccionada}<br><small>${codigo}</small>`;
+    }
+
+    function enviarWhatsApp() {
+        const mensaje = `¡Hola ${datosTicket.nombre}! Aquí tienes tu entrada para el evento.%0A%0A*Ticket:* ${datosTicket.entrada}%0A*Código:* ${datosTicket.codigo}%0A%0APresenta este mensaje en la puerta.`;
+        const url = `https://wa.me/${datosTicket.whatsapp.replace(/\D/g,'')}?text=${mensaje}`;
+        window.open(url, '_blank');
     }
 
     window.onload = cargarPrecios;
