@@ -1,87 +1,87 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TicketsBloom - Nueva Venta</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  
-  <style>
-    :root { --bg: #0a0a12; --card: #161625; --accent: #00f2fe; --border: #33334d; --text: #ffffff; }
-    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-    
-    .card { width: 100%; max-width: 400px; background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--border); box-sizing: border-box; }
-    h2 { color: var(--accent); text-align: center; margin-bottom: 20px; text-transform: uppercase; font-size: 1.2rem; }
-    
-    .label-info { font-size: 12px; color: #888; margin-bottom: 15px; display: block; text-align: center; }
-    
-    .field { margin-bottom: 15px; }
-    label { display: block; font-size: 11px; color: var(--accent); margin-bottom: 5px; text-transform: uppercase; }
-    input, select { width: 100%; padding: 12px; background: #0d0d1a; border: 1px solid var(--border); border-radius: 10px; color: white; box-sizing: border-box; font-size: 16px; }
-    
-    .btn-generate { width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 12px; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    
-    #qrcode-container { margin-top: 25px; background: white; padding: 15px; border-radius: 15px; display: none; flex-direction: column; align-items: center; }
-    #qrcode { margin-bottom: 10px; }
-    .ticket-info { color: #000; font-size: 12px; font-weight: bold; text-align: center; }
-    
-    .btn-new { display: none; margin-top: 15px; color: var(--accent); background: none; border: 1px solid var(--accent); padding: 10px; border-radius: 10px; width: 100%; cursor: pointer; }
-  </style>
-</head>
-<body>
-
-  <div class="card">
-    <h2>GENERAR TICKET</h2>
-    <span class="label-info" id="welcome-msg">Cargando promotor...</span>
-
-    <div id="form-venta">
-        <div class="field">
-            <label>Nombre del Cliente</label>
-            <input type="text" id="nombre-cliente" placeholder="Ej. Juan Pérez">
-        </div>
-        <div class="field">
-            <label>Tipo de Entrada</label>
-            <select id="tipo-entrada">
-                <option value="General">General</option>
-                <option value="VIP">VIP</option>
-                <option value="Box">Box</option>
-                <option value="Preventa">Preventa</option>
-            </select>
-        </div>
-        <button class="btn-generate" onclick="procesarVenta()">CREAR TICKET QR</button>
+<div class="field">
+    <label>Selecciona el Tipo de Entrada</label>
+    <div id="botones-precios" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+        <p style="color: #666; font-size: 12px;">Cargando precios...</p>
     </div>
+    <input type="hidden" id="tipo-entrada-seleccionada">
+</div>
 
-    <div id="qrcode-container">
-        <div id="qrcode"></div>
-        <div class="ticket-info" id="ticket-data"></div>
-        <p style="color: #666; font-size: 10px; margin-top: 5px;">Toma captura o escanea para validar</p>
-    </div>
-
-    <button id="btn-new" class="btn-new" onclick="location.reload()">+ Nueva Venta</button>
-  </div>
-
-  <script>
-    // 1. Configuración (Usa tus mismas llaves de app.js)
-    const SUPABASE_URL = 'TU_URL_AQUÍ'; 
-    const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
+<script>
+    // Configuración (Usa tus mismas llaves)
+    const SUPABASE_URL = 'https://tu-proyecto.supabase.co'; 
+    const SUPABASE_KEY = 'tu-llave-anon-public'; 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 2. Recuperar Promotor del Login
-    const promotor = localStorage.getItem('promotor_activo') || 'Desconocido';
-    document.getElementById('welcome-msg').innerText = "Promotor: " + promotor;
+    let entradaSeleccionada = "";
 
+    // FUNCIÓN PARA CARGAR BOTONES DESDE SUPABASE
+    async function cargarBotonesPrecios() {
+        const contenedor = document.getElementById('botones-precios');
+        
+        // Traemos los datos de la tabla 'precios'
+        const { data, error } = await _supabase
+            .from('precios')
+            .select('tipo_entrada, precio');
+
+        if (error) {
+            contenedor.innerHTML = "<p style='color:red;'>Error al cargar precios</p>";
+            return;
+        }
+
+        contenedor.innerHTML = ""; // Limpiar mensaje de carga
+
+        data.forEach(p => {
+            const btn = document.createElement('button');
+            btn.type = "button";
+            btn.className = "btn-precio";
+            btn.innerHTML = `<b>${p.tipo_entrada}</b><br>$${p.precio}`;
+            
+            // Estilo del botón (puedes mover esto al CSS)
+            Object.assign(btn.style, {
+                padding: "15px",
+                backgroundColor: "#0d0d1a",
+                border: "1px solid #33334d",
+                borderRadius: "12px",
+                color: "white",
+                cursor: "pointer",
+                transition: "all 0.3s"
+            });
+
+            btn.onclick = () => seleccionarEntrada(btn, p.tipo_entrada);
+            contenedor.appendChild(btn);
+        });
+    }
+
+    function seleccionarEntrada(elemento, tipo) {
+        // Desmarcar todos los botones
+        document.querySelectorAll('.btn-precio').forEach(b => {
+            b.style.borderColor = "#33334d";
+            b.style.backgroundColor = "#0d0d1a";
+            b.style.boxShadow = "none";
+        });
+
+        // Marcar el seleccionado con estilo Neón
+        elemento.style.borderColor = "#00f2fe";
+        elemento.style.backgroundColor = "rgba(0, 242, 254, 0.1)";
+        elemento.style.boxShadow = "0 0 15px rgba(0, 242, 254, 0.3)";
+        
+        entradaSeleccionada = tipo;
+        document.getElementById('tipo-entrada-seleccionada').value = tipo;
+    }
+
+    // MODIFICAR LA FUNCIÓN DE GUARDAR
     async function procesarVenta() {
-        const nombre = document.getElementById('nombre-cliente').value;
-        const tipo = document.getElementById('tipo-entrada').value;
+        const nombre = document.getElementById('nombre-cliente').value.trim();
+        const tipo = entradaSeleccionada;
+        const promotor = localStorage.getItem('promotor_activo') || 'Anonimo';
 
-        if(!nombre) return alert("Escribe el nombre del cliente");
+        if(!nombre || !tipo) {
+            alert("Por favor, escribe el nombre y selecciona una entrada.");
+            return;
+        }
 
-        // Generamos un código único corto (Ej: TB-123456)
         const codigoUnico = "TB-" + Math.random().toString(36).substr(2, 6).toUpperCase();
 
-        // 3. Guardar en Supabase
         const { data, error } = await _supabase
             .from('tickets')
             .insert([{ 
@@ -93,53 +93,12 @@
             }]);
 
         if (error) {
-            alert("Error al guardar: " + error.message);
+            alert("Error: " + error.message);
         } else {
             mostrarQR(codigoUnico, nombre, tipo);
         }
     }
 
-    function mostrarQR(codigo, nombre, tipo) {
-        document.getElementById('form-venta').style.display = 'none';
-        document.getElementById('qrcode-container').style.display = 'flex';
-        document.getElementById('btn-new').style.display = 'block';
-
-        // Generar el código QR físicamente
-        new QRCode(document.getElementById("qrcode"), {
-            text: codigo,
-            width: 200,
-            height: 200,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
-
-        document.getElementById('ticket-data').innerHTML = `CLIENTE: ${nombre}<br>TIPO: ${tipo}<br>COD: ${codigo}`;
-    }
-
-    // Dentro de tu <script> en vender.html
-async function cargarPrecios() {
-    const select = document.getElementById('tipo-entrada');
-    
-    const { data, error } = await _supabase
-        .from('precios')
-        .select('tipo_entrada, precio');
-
-    if (error) return console.error("Error cargando precios:", error);
-
-    // Limpiamos y llenamos el selector
-    select.innerHTML = "";
-    data.forEach(p => {
-        let opt = document.createElement('option');
-        opt.value = p.tipo_entrada;
-        opt.innerHTML = `${p.tipo_entrada} ($${p.precio})`;
-        select.appendChild(opt);
-    });
-}
-
-// Ejecutar al abrir la página
-window.onload = cargarPrecios;
-
-  </script>
-</body>
-</html>
+    // Ejecutar al iniciar
+    window.onload = cargarBotonesPrecios;
+</script>
