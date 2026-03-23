@@ -116,6 +116,28 @@
 
         document.getElementById('ticket-data').innerHTML = `CLIENTE: ${nombre}<br>TIPO: ${tipo}<br>COD: ${codigo}`;
     }
+
+    // Dentro de tu <script> en vender.html
+async function cargarPrecios() {
+    const select = document.getElementById('tipo-entrada');
+    
+    const { data, error } = await _supabase
+        .from('precios')
+        .select('tipo_entrada, precio, moneda');
+
+    if (error) return console.error("Error cargando precios:", error);
+
+    select.innerHTML = ""; // Limpiamos el select
+    data.forEach(p => {
+        let opt = document.createElement('option');
+        opt.value = p.tipo_entrada;
+        opt.innerHTML = `${p.tipo_entrada} - ${p.moneda}${p.precio}`;
+        select.appendChild(opt);
+    });
+}
+
+// Llamar a la función al cargar la página
+window.onload = cargarPrecios;
   </script>
 </body>
 </html>
