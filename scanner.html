@@ -1,111 +1,120 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TicketsBloom - Scanner Fix</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    :root { --bg: #050509; --card: #10101e; --accent: #00f2fe; --border: #1f1f33; --success: #00ff88; --error: #ff4d4d; }
-    body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-    #reader { width: 100%; max-width: 350px; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); background: #000; min-height: 250px; }
-    .btn-start { background: var(--accent); border: none; padding: 15px; border-radius: 12px; color: #000; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 10px; }
-    .result-card { margin-top: 20px; width: 100%; max-width: 350px; padding: 20px; border-radius: 20px; background: var(--card); border: 1px solid var(--border); text-align: center; }
-    select { width: 100%; padding: 10px; background: #111; color: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; display: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scanner Pro - TicketsBloom</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+
+    <style>
+        :root { --bg: #050509; --accent: #00f2fe; --card: #10101e; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; text-align: center; padding: 20px; }
+        
+        #preview { 
+            width: 100%; max-width: 350px; height: 350px; object-fit: cover;
+            border-radius: 30px; border: 2px solid #1f1f33; background: #000;
+        }
+        
+        .btn-scan {
+            background: var(--accent); color: #000; border: none; padding: 20px;
+            width: 100%; max-width: 350px; border-radius: 15px; font-weight: bold;
+            margin-top: 20px; font-size: 16px; box-shadow: 0 10px 20px rgba(0, 242, 254, 0.2);
+        }
+
+        .result {
+            margin-top: 20px; padding: 20px; border-radius: 20px; background: var(--card);
+            border: 1px solid #1f1f33; display: none;
+        }
+    </style>
 </head>
 <body>
 
-  <h2 style="color:var(--accent); letter-spacing:3px;">TICKETSBLOOM</h2>
-  
-  <select id="camera-select"></select>
-  
-  <div id="reader"></div>
-  
-  <button id="btn-iniciar" class="btn-start" onclick="prepararCamara()">ENCENDER CÁMARA</button>
+    <h2 style="color:var(--accent); letter-spacing:3px;">TICKETSBLOOM</h2>
+    <p style="font-size:10px; color:#666;">LECTOR DE ACCESO PUERTA</p>
 
-  <div id="result-panel" class="result-card">
-    <div id="status-label" style="font-size:10px; color:#888;">ESTADO: ESPERANDO</div>
-    <div id="display-name" style="font-size:20px; font-weight:bold; margin:10px 0;">---</div>
-    <div id="display-type" style="color:var(--accent);">Enfoque el QR</div>
-  </div>
+    <video id="preview"></video>
 
-  <script>
-    const SUPABASE_URL = 'TU_URL_AQUÍ'; 
-    const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <button id="start-btn" class="btn-scan" onclick="encender()">ENCENDER ESCÁNER</button>
 
-    let html5QrCode;
+    <div id="result-box" class="result">
+        <div id="status" style="font-size:12px; color:var(--accent);">VERIFICANDO...</div>
+        <div id="nombre" style="font-size:22px; font-weight:bold; margin:10px 0;">---</div>
+        <div id="tipo">---</div>
+    </div>
 
-    async function prepararCamara() {
-        const btn = document.getElementById('btn-iniciar');
-        btn.innerText = "CARGANDO LENTES...";
-        
-        try {
-            // 1. Pedir permisos y listar cámaras
-            const devices = await Html5Qrcode.getCameras();
-            
-            if (devices && devices.length) {
-                html5QrCode = new Html5Qrcode("reader");
-                
-                // Intentamos usar la cámara trasera directamente ("environment")
-                const config = { fps: 15, qrbox: { width: 250, height: 250 } };
-                
-                await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
-                btn.style.display = "none";
+    <script>
+        // CONFIGURACIÓN SUPABASE
+        const SUPABASE_URL = 'TU_URL_AQUÍ'; 
+        const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let scanner = new Instascan.Scanner({ video: document.getElementById('preview'), mirror: false });
+
+        // Al detectar un QR
+        scanner.addListener('scan', function (content) {
+            validarTicket(content);
+        });
+
+        async function encender() {
+            const btn = document.getElementById('start-btn');
+            btn.innerText = "ACCEDIENDO A LENTE...";
+
+            Instascan.Camera.getCameras().then(function (cameras) {
+                if (cameras.length > 0) {
+                    // En iPhone, la cámara trasera suele ser la última de la lista (cameras.length - 1)
+                    // o la que contenga "back" o "trasera"
+                    let backCam = cameras.find(c => c.name.toLowerCase().includes('back')) || cameras[cameras.length - 1];
+                    
+                    scanner.start(backCam).then(() => {
+                        btn.style.display = 'none';
+                    });
+                } else {
+                    alert('No se encontraron cámaras.');
+                    btn.innerText = "ERROR CÁMARA";
+                }
+            }).catch(function (e) {
+                console.error(e);
+                alert("Permiso denegado. Ve a Ajustes > Safari > Cámara.");
+            });
+        }
+
+        async function validarTicket(codigo) {
+            const box = document.getElementById('result-box');
+            const nameTxt = document.getElementById('nombre');
+            const typeTxt = document.getElementById('tipo');
+            const statusTxt = document.getElementById('status');
+
+            box.style.display = 'block';
+            nameTxt.innerText = codigo.split('|')[0];
+
+            try {
+                const { data, error } = await _supabase.from('tickets').select('*').eq('codigo_qr', codigo).single();
+
+                if (error || !data) {
+                    renderResult(false, "ERROR", "TICKET NO VÁLIDO");
+                } else if (data.usado) {
+                    renderResult(false, "DENEGADO", "YA FUE USADO");
+                } else {
+                    await _supabase.from('tickets').update({ usado: true }).eq('codigo_qr', codigo);
+                    renderResult(true, "PERMITIDO", data.tipo_entrada);
+                }
+            } catch (e) {
+                renderResult(false, "ERROR", "SIN CONEXIÓN");
             }
-        } catch (err) {
-            console.error(err);
-            btn.innerText = "ERROR - REINTENTAR";
-            alert("Safari bloqueó la cámara. Ve a Ajustes > Safari > Cámara > Permitir.");
-        }
-    }
 
-    async function onScanSuccess(decodedText) {
-        await html5QrCode.pause();
-        const parts = decodedText.split('|');
-        const nombre = parts[0] || "Desconocido";
-        
-        document.getElementById('status-label').innerText = "VERIFICANDO...";
-        document.getElementById('display-name').innerText = nombre;
-
-        const { data: ticket, error } = await _supabase.from('tickets').select('*').eq('codigo_qr', decodedText).single();
-
-        if (error || !ticket) {
-            updateUI(false, "ERROR", "TICKET INVÁLIDO");
-        } else if (ticket.usado) {
-            updateUI(false, "DENEGADO", "YA INGRESÓ");
-        } else {
-            await _supabase.from('tickets').update({ usado: true }).eq('codigo_qr', decodedText);
-            updateUI(true, "PERMITIDO", ticket.tipo_entrada);
+            setTimeout(() => { box.style.display = 'none'; }, 4000);
         }
 
-        setTimeout(async () => {
-            resetUI();
-            await html5QrCode.resume();
-        }, 3000);
-    }
-
-    function updateUI(granted, status, detail) {
-        const panel = document.getElementById('result-panel');
-        panel.style.background = granted ? "var(--success)" : "var(--error)";
-        panel.style.color = granted ? "#000" : "#fff";
-        document.getElementById('display-type').innerText = detail;
-        document.getElementById('display-type').style.color = granted ? "#000" : "#fff";
-        document.getElementById('status-label').innerText = status;
-        if (navigator.vibrate) navigator.vibrate(granted ? 200 : [100, 50, 100]);
-    }
-
-    function resetUI() {
-        const panel = document.getElementById('result-panel');
-        panel.style.background = "var(--card)";
-        panel.style.color = "#fff";
-        document.getElementById('status-label').innerText = "ESPERANDO...";
-        document.getElementById('display-name').innerText = "---";
-        document.getElementById('display-type').innerText = "Enfoque el QR";
-        document.getElementById('display-type').style.color = "var(--accent)";
-    }
-  </script>
+        function renderResult(ok, status, detail) {
+            const box = document.getElementById('result-box');
+            box.style.background = ok ? "#00ff88" : "#ff4d4d";
+            box.style.color = ok ? "#000" : "#fff";
+            document.getElementById('status').innerText = status;
+            document.getElementById('status').style.color = ok ? "#000" : "#fff";
+            document.getElementById('tipo').innerText = detail;
+        }
+    </script>
 </body>
 </html>
