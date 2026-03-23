@@ -9,107 +9,44 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
   
   <style>
-    :root { --bg: #0a0a12; --card: #161625; --accent: #00f2fe; --border: #33334d; --success: #25D366; --error: #ff6b6b; }
-    body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    :root { --bg: #050509; --card: #10101e; --accent: #00f2fe; --border: #1f1f33; --success: #00ff88; --error: #ff4d4d; }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
     
-    .header { padding: 20px; text-align: center; }
-    h2 { color: var(--accent); margin: 0; letter-spacing: 2px; font-size: 1.2rem; }
+    h2 { color: var(--accent); letter-spacing: 4px; font-size: 1.1rem; margin-bottom: 5px; }
+    .mode-tag { font-size: 10px; color: #666; margin-bottom: 20px; letter-spacing: 2px; }
 
-    /* Contenedor de la cámara */
-    #reader { width: 100%; max-width: 350px; border-radius: 20px; overflow: hidden; border: 2px solid var(--border); background: black; }
+    /* Cámara */
+    #reader { width: 100%; max-width: 350px; border-radius: 25px; overflow: hidden; border: 1px solid var(--border); background: #000; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
     
-    .status-card { margin-top: 20px; width: 85%; max-width: 350px; padding: 20px; border-radius: 15px; background: var(--card); border: 1px solid var(--border); text-align: center; min-height: 80px; display: flex; flex-direction: column; justify-content: center; transition: 0.3s; }
+    /* Tarjeta de Resultado */
+    .result-card { 
+      margin-top: 25px; width: 100%; max-width: 350px; padding: 25px; border-radius: 20px; 
+      background: var(--card); border: 1px solid var(--border); text-align: center; 
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    }
     
-    .ok { background: var(--success); color: white; border: none; box-shadow: 0 0 20px rgba(37,211,102,0.4); }
-    .err { background: var(--error); color: white; border: none; box-shadow: 0 0 20px rgba(255,107,107,0.4); }
+    .status-title { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; color: #888; }
+    .client-name { font-size: 22px; font-weight: 800; margin-bottom: 5px; display: block; }
+    .ticket-type { font-size: 14px; color: var(--accent); opacity: 0.8; }
+
+    /* Estados visuales */
+    .access-granted { background: var(--success); color: #000; border: none; box-shadow: 0 0 40px rgba(0,255,136,0.3); transform: scale(1.05); }
+    .access-denied { background: var(--error); color: white; border: none; box-shadow: 0 0 40px rgba(255,77,77,0.3); }
     
-    .btn-reset { margin-top: 20px; background: none; border: 1px solid var(--accent); color: var(--accent); padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+    .btn-reload { margin-top: 30px; background: none; border: 1px solid var(--border); color: #666; padding: 10px 20px; border-radius: 12px; font-size: 12px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <h2>TICKETSBLOOM</h2>
-    <p style="color: #666; font-size: 12px;">MODO ESCÁNER EN VIVO</p>
-  </div>
+  <h2>TICKETSBLOOM</h2>
+  <div class="mode-tag">CONTROL DE ACCESO • PUERTA</div>
 
   <div id="reader"></div>
 
-  <div id="status-container" class="status-card">
-    <div id="status-text">Enfoque un código QR para validar</div>
+  <div id="result-panel" class="result-card">
+    <div id="status-label" class="status-title">Esperando Escaneo...</div>
+    <span id="display-name" class="client-name">---</span>
+    <span id="display-type" class="ticket-type">Enfoque un código QR</span>
   </div>
 
-  <button class="btn-reset" onclick="location.reload()">Reiniciar Cámara</button>
-
-  <script>
-    // 2. Configuración de Supabase (Usa las mismas que en app.js)
-    const SUPABASE_URL = 'TU_URL_AQUÍ'; 
-    const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const statusContainer = document.getElementById('status-container');
-    const statusText = document.getElementById('status-text');
-
-    // 3. Lógica del Escáner
-    async function onScanSuccess(decodedText) {
-        // Pausamos el escaneo para procesar
-        html5QrcodeScanner.pause(true);
-        
-        statusText.innerHTML = "⏳ Verificando en base de datos...";
-        statusContainer.className = "status-card";
-
-        try {
-            // Buscamos el ticket en Supabase
-            const { data: ticket, error } = await _supabase
-                .from('tickets')
-                .select('*')
-                .eq('codigo_qr', decodedText)
-                .single();
-
-            if (error || !ticket) {
-                showResult(false, "❌ TICKET NO ENCONTRADO");
-            } else if (ticket.usado) {
-                showResult(false, "⚠️ YA INGRESÓ: " + ticket.nombre_cliente);
-            } else {
-                // Marcar como usado
-                const { error: updError } = await _supabase
-                    .from('tickets')
-                    .update({ usado: true })
-                    .eq('codigo_qr', decodedText);
-
-                if (updError) throw updError;
-                showResult(true, "✅ ACCESO PERMITIDO<br>" + ticket.nombre_cliente);
-            }
-        } catch (e) {
-            showResult(false, "❌ ERROR DE CONEXIÓN");
-        }
-
-        // Reanudamos después de 3 segundos para el siguiente
-        setTimeout(() => {
-            html5QrcodeScanner.resume();
-            if(!statusContainer.classList.contains('ok') && !statusContainer.classList.contains('err')) {
-                statusText.innerText = "Enfoque un código QR";
-            }
-        }, 3000);
-    }
-
-    function showResult(isOk, message) {
-        statusContainer.className = "status-card " + (isOk ? "ok" : "err");
-        statusText.innerHTML = "<b>" + message + "</b>";
-        // Feedback de vibración (solo Android/algunos iPhone)
-        if (navigator.vibrate) navigator.vibrate(200);
-    }
-
-    // 4. Iniciar Cámara con configuración Pro
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-        "reader", 
-        { 
-            fps: 15, 
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0 
-        }
-    );
-    html5QrcodeScanner.render(onScanSuccess);
-  </script>
-</body>
-</html>
+  <button class="btn-reload" onclick="location.reload()">Reiniciar Cámara
