@@ -1,101 +1,58 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TicketsBloom - Login Promotores</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <style>
-    :root { --bg: #0a0a12; --card: #161625; --accent: #00f2fe; --border: #33334d; --text: #ffffff; }
-    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    
-    .login-card { width: 90%; max-width: 380px; background: var(--card); padding: 40px 30px; border-radius: 25px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.7); text-align: center; }
-    
-    h1 { color: var(--accent); letter-spacing: 3px; margin-bottom: 10px; font-size: 1.5rem; text-transform: uppercase; }
-    p { color: #888; font-size: 14px; margin-bottom: 30px; }
-    
-    .input-group { text-align: left; margin-bottom: 20px; }
-    label { display: block; font-size: 12px; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
-    
-    select, input { width: 100%; padding: 15px; background: #0d0d1a; border: 1px solid var(--border); border-radius: 12px; color: white; font-size: 16px; outline: none; box-sizing: border-box; }
-    select:focus { border-color: var(--accent); }
-    
-    .btn-login { width: 100%; padding: 18px; background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%); border: none; border-radius: 15px; color: #000; font-weight: 900; font-size: 16px; cursor: pointer; text-transform: uppercase; margin-top: 10px; transition: transform 0.2s; }
-    .btn-login:active { transform: scale(0.96); }
-
-    .nav-links { margin-top: 25px; display: flex; justify-content: space-around; font-size: 13px; }
-    .nav-links a { color: var(--accent); text-decoration: none; opacity: 0.7; }
-  </style>
-</head>
-<body>
-
-  <div class="login-card">
+<div class="login-card">
     <h1>TICKETSBLOOM</h1>
-    <p>Panel de Control para Promotores</p>
+    <p>Acceso Privado - Fowks Studio</p>
 
     <div class="input-group">
-      <label>Selecciona tu Nombre</label>
-      <select id="promotor-select">
-        <option value="">-- Elige tu nombre --</option>
-        <option value="Promotor 1">Promotor 1</option>
-        <option value="Promotor 2">Promotor 2</option>
-        <option value="Admin">Administrador</option>
-      </select>
+      <label>Usuario</label>
+      <input type="text" id="user-input" placeholder="Tu usuario">
     </div>
 
     <div class="input-group">
-      <label>Código de Acceso (Opcional)</label>
-      <input type="password" id="pass-input" placeholder="••••">
+      <label>Contraseña</label>
+      <input type="password" id="pass-input" placeholder="••••••••">
     </div>
 
-    <button class="btn-login" onclick="iniciarSesion()">Ingresar al Sistema</button>
-
-    <div class="nav-links">
-      <a href="scanner.html">🔗 Ir al Escáner Directo</a>
-    </div>
-  </div>
-
-  <script>
-    function iniciarSesion() {
-      const promotor = document.getElementById('promotor-select').value;
-      
-      if (!promotor) {
-        alert("Por favor, selecciona tu nombre de promotor.");
-        return;
-      }
-
-      // Guardamos el nombre en el navegador (Local Storage) 
-      // para que cuando venda un ticket sepamos quién fue.
-      localStorage.setItem('promotor_activo', promotor);
-      
-      // Redirigimos a la pantalla de ventas (la crearemos a continuación)
-      // O puedes enviarlo directo al scanner si prefieres
-      window.location.href = "vender.html"; 
-    }
-
-    async function cargarPromotores() {
-    const select = document.getElementById('promotor-select');
+    <button id="btn-entrar" class="btn-login" onclick="validarLogin()">Ingresar al Sistema</button>
     
-    // Consultamos solo los promotores activos
-    const { data, error } = await _supabase
-        .from('promotores')
-        .select('nombre')
-        .eq('activo', true);
+    <div id="error-msg" style="color: #ff6b6b; font-size: 12px; margin-top: 10px; display: none;">
+        Usuario o contraseña incorrectos
+    </div>
+</div>
 
-    if (error) return console.error("Error cargando promotores:", error);
+<script>
+    // Configuración (Usa tus mismas llaves)
+    const SUPABASE_URL = 'TU_URL_AQUÍ'; 
+    const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    data.forEach(p => {
-        let opt = document.createElement('option');
-        opt.value = p.nombre;
-        opt.innerHTML = p.nombre;
-        select.appendChild(opt);
-    });
-}
+    async function validarLogin() {
+        const user = document.getElementById('user-input').value;
+        const pass = document.getElementById('pass-input').value;
+        const btn = document.getElementById('btn-entrar');
+        const errorMsg = document.getElementById('error-msg');
 
-// Llamar a la función al cargar la página
-window.onload = cargarPromotores;
-  </script>
-</body>
-</html>
+        if (!user || !pass) return alert("Completa todos los campos");
+
+        btn.innerText = "Verificando...";
+        errorMsg.style.display = "none";
+
+        // Consultamos en Supabase si existe esa combinación
+        const { data: promotor, error } = await _supabase
+            .from('promotores')
+            .select('nombre, usuario, activo')
+            .eq('usuario', user)
+            .eq('password', pass)
+            .eq('activo', true)
+            .single();
+
+        if (error || !promotor) {
+            btn.innerText = "Ingresar al Sistema";
+            errorMsg.style.display = "block";
+            return;
+        }
+
+        // Si todo está bien, guardamos su nombre real y entramos
+        localStorage.setItem('promotor_activo', promotor.nombre);
+        window.location.href = "vender.html";
+    }
+</script>
