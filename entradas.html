@@ -281,23 +281,20 @@ document.getElementById('display-promotor').innerText = PROMOTOR_NOMBRE;
 }
 
 async function reportarVentaASheets(ticket) {
-    const WEBHOOK_URL = "TU_URL_DE_APPS_SCRIPT"; 
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzUh5YpApF9aMw9mFj0mbmi0C4cq3ih_cQdHjHvLkjoIV-Xw7pcwGZX1CecyAW26lI_/exec"; 
 
     const payload = {
         accion: "venta",
         id: ticket.id,
+        fecha: new Date(ticket.fecha_venta).toLocaleString('es-PE', { timeZone: 'America/Lima' }), 
         cliente: ticket.nombre_cliente,
-        celular: document.getElementById('celular-cliente').value, // <--- CAPTURAMOS EL NÚMERO
+        celular: ticket.whatsapp, // Usamos el campo whatsapp que viene de la DB
         tipo: ticket.tipo_entrada,
-        promotor: localStorage.getItem('promotor_activo'),
+        promotor: ticket.promotor,
         codigo: ticket.codigo_qr
     };
 
-    fetch(WEBHOOK_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify(payload)
-    });
+    fetch(WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
 }
   
 </script>
