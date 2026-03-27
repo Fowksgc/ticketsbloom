@@ -277,19 +277,19 @@ document.getElementById('display-promotor').innerText = PROMOTOR_NOMBRE;
   return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
 }
 
-  async function reportarVentaASheets(ticket) {
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyRUN_fjCn_sIuFbFNVYvBPoIYFq5c1qGAizfGm5X5mAY71rtDEWwFhzesp55UIDmwC/exec"; 
+async function reportarVentaASheets(ticket) {
+    const WEBHOOK_URL = "TU_URL_DE_APPS_SCRIPT"; 
 
     const payload = {
         accion: "venta",
         id: ticket.id,
         cliente: ticket.nombre_cliente,
+        celular: document.getElementById('celular-cliente').value, // <--- CAPTURAMOS EL NÚMERO
         tipo: ticket.tipo_entrada,
         promotor: localStorage.getItem('promotor_activo'),
         codigo: ticket.codigo_qr
     };
 
-    // Usamos 'no-cors' para que Google no bloquee la petición desde Vercel
     fetch(WEBHOOK_URL, {
         method: 'POST',
         mode: 'no-cors',
