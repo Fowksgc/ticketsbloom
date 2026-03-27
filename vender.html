@@ -190,6 +190,19 @@
 }
 
     window.onload = cargarPrecios;
+
+  // --- GUARDRIÁN DE SEGURIDAD ---
+const promotorLogueado = localStorage.getItem('promotor_activo');
+
+if (!promotorLogueado) {
+    // Si no hay nadie logueado, lo expulsamos al login inmediatamente
+    alert("Acceso denegado. Por favor, inicia sesión.");
+    window.location.href = 'index.html'; 
+}
+
+// Si llega aquí, es porque hay alguien. Ahora sí definimos el nombre.
+const PROMOTOR_NOMBRE = promotorLogueado;
+document.getElementById('display-promotor').innerText = PROMOTOR_NOMBRE;
 </script>
 
 </body>
