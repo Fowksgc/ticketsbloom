@@ -193,23 +193,32 @@
       overflow: hidden;   /* Asegura ajuste perfecto */
     }
 /* --- CORRECCIÓN: LOGO GIGANTE Y COMPLETO --- */
+    /* --- LOGO MEDIANO CON ESPACIADO --- */
     .logo-container {
       width: 100%;
-      max-width: 340px;   /* Permite que sea más ancho */
-      height: auto;       /* ELIMINA EL ZOOM: Deja que la altura sea natural */
-      margin: 0 auto 0px; /* Pega el logo al título */
-      padding: 0;
+      /* Reducimos el ancho máximo para que se vea "mediano" */
+      max-width: 220px;   
+      height: auto;
+      
+      /* Centrado horizontal */
+      margin: 0 auto; 
+      
+      /* --- AGREGAMOS EL PADDING QUE PEDISTE --- */
+      padding-top: 30px;    /* Espacio arriba del logo */
+      padding-bottom: 20px; /* Espacio entre logo y texto */
+      
       display: flex;
       justify-content: center;
       background: none;
     }
 
     .logo-container img {
-      width: 100%;        /* Ocupa todo el ancho del contenedor */
-      height: auto;       /* Mantiene la proporción original (SIN CORTES) */
-      object-fit: contain; 
+      width: 100%;
+      height: auto;
+      object-fit: contain;
       display: block;
-      filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.4));
+      /* Brillo neón un poco más sutil */
+      filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.3));
     }
 
     h1 {
