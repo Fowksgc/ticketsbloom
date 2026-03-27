@@ -196,6 +196,16 @@
             // (puedes ajustar esto si quieres permitir nombres duplicados)
             return alert("Error al generar el ticket. Intenta de nuevo.");
         }
+      if (!error && data.length > 0) {
+        // Enviar al Excel (Google Sheets)
+        reportarVentaASheets(data[0]); 
+        
+        // 3. Lógica para mostrar el QR al cliente
+        generarQR(codigoUnico); 
+        
+        // Limpiar formulario o mostrar éxito
+        alert("¡Entrada generada y registrada en el Excel!");
+    }
 
         datosTicket = { nombre, codigo: textoParaQR, whatsapp, entrada: entradaSeleccionada };
 
