@@ -174,39 +174,39 @@
       border-radius: 8px;
     }
 
-/* --- REDISEÑO DEL LOGO: GRANDE Y LIBRE --- */
+/* --- REDISEÑO DEL LOGO: ULTRA GRANDE Y LIBRE --- */
     .logo-container {
       /* Eliminamos el círculo y fondo */
       width: 100%;       /* Ocupa todo el ancho de la tarjeta */
-      max-width: 250px;  /* Pero no más de 250px en total */
-      height: 120px;     /* Aumentamos la altura de exhibición (Antes 80px) */
-      margin: 0 auto 25px; /* Más espacio inferior para que respire (Antes 15px) */
+      max-width: 320px;  /* Pero no más de 320px en total (Antes 250px) */
+      height: 180px;     /* AUMENTO DRASTICO DE ALTURA (Antes 80px/120px) */
+      margin: 0 auto 30px; /* Más espacio inferior para que respire (Antes 25px) */
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 0;        /* Eliminamos padding interno */
       background: none;  /* Sin fondo circular */
       border-radius: 0;  /* Sin bordes redondeados */
+      overflow: hidden;  /* Asegura que no se deforme */
     }
 
     .logo-container img {
       /* MÁXIMA ESCALA SIN DEFORMACIÓN */
       width: auto;       /* Mantiene ancho automático según proporción */
-      height: 100%;      /* Escala el alto para llenar los 120px del contenedor */
+      height: 100%;      /* Escala el alto para llenar los 180px del contenedor */
       max-width: 100%;   /* Asegura que no se salga de la tarjeta */
       object-fit: contain; /* Ajuste perfecto sin estirarse ni cortarse */
       display: block;
-      /* EFECTO DE RESALTE (OPCIONAL - DESACTIVA SI NO TE GUSTA) */
-      filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.3)); /* Brillo cyan suave alrededor del PNG */
+      /* EFECTO DE RESALTE NEÓN (OPCIONAL - DESACTIVA SI NO TE GUSTA) */
+      filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.4)); /* Brillo cyan neón suave alrededor del PNG */
     }
-    
     
     /* Pequeño ajuste al título para equilibrar */
     h1 {
       color: var(--accent);
       text-align: center;
       letter-spacing: 4px; /* Un poco más de espacio */
-      font-size: 1.2rem;   /* Un poco más grande (Antes 1.1rem) */
+      font-size: 1.2rem;   /* Tamaño equilibrado */
       margin: 0 0 10px 0;   /* Más espacio inferior */
       text-transform: uppercase;
     }
