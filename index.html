@@ -174,36 +174,39 @@
       border-radius: 8px;
     }
 
-    /* --- CORRECCIÓN DEL TAMAÑO DEL LOGO --- */
+/* --- REDISEÑO DEL LOGO: GRANDE Y LIBRE --- */
     .logo-container {
-      /* Reducimos el contenedor visual */
-      width: 80px;  /* Antes 100px */
-      height: 80px; /* Antes 100px */
-      margin: 0 auto 15px; /* Menos margen inferior */
-      border-radius: 50%;
-      background: rgba(0, 242, 254, 0.03); /* Brillo aún más sutil */
+      /* Eliminamos el círculo y fondo */
+      width: 100%;       /* Ocupa todo el ancho de la tarjeta */
+      max-width: 250px;  /* Pero no más de 250px en total */
+      height: 120px;     /* Aumentamos la altura de exhibición (Antes 80px) */
+      margin: 0 auto 25px; /* Más espacio inferior para que respire (Antes 15px) */
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 5px; /* Menos padding interno */
-      overflow: hidden; /* Asegura que nada se salga del círculo */
+      padding: 0;        /* Eliminamos padding interno */
+      background: none;  /* Sin fondo circular */
+      border-radius: 0;  /* Sin bordes redondeados */
     }
 
     .logo-container img {
-      /* FORZAMOS EL AJUSTE PERFECTO */
-      max-width: 90%;  /* Ocupa casi todo el ancho del contenedor */
-      max-height: 90%; /* Ocupa casi todo el alto */
-      object-fit: contain; /* Mantiene la proporción sin estirarse */
+      /* MÁXIMA ESCALA SIN DEFORMACIÓN */
+      width: auto;       /* Mantiene ancho automático según proporción */
+      height: 100%;      /* Escala el alto para llenar los 120px del contenedor */
+      max-width: 100%;   /* Asegura que no se salga de la tarjeta */
+      object-fit: contain; /* Ajuste perfecto sin estirarse ni cortarse */
       display: block;
+      /* EFECTO DE RESALTE (OPCIONAL - DESACTIVA SI NO TE GUSTA) */
+      filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.3)); /* Brillo cyan suave alrededor del PNG */
     }
     
     /* Pequeño ajuste al título para equilibrar */
     h1 {
       color: var(--accent);
       text-align: center;
-      letter-spacing: 3px; /* Un poco menos de espacio */
-      font-size: 1.1rem;   /* Un poco más pequeño */
-      margin: 0 0 5px 0;
+      letter-spacing: 4px; /* Un poco más de espacio */
+      font-size: 1.2rem;   /* Un poco más grande (Antes 1.1rem) */
+      margin: 0 0 10px 0;   /* Más espacio inferior */
       text-transform: uppercase;
     }
 
