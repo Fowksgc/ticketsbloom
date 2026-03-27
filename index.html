@@ -192,32 +192,32 @@
       border-radius: 0;   /* Sin bordes redondeados */
       overflow: hidden;   /* Asegura ajuste perfecto */
     }
-
- /* --- LOGO: SIN ESPACIO INFERIOR --- */
+/* --- CORRECCIÓN: LOGO GIGANTE Y COMPLETO --- */
     .logo-container {
       width: 100%;
-      max-width: 320px;
-      height: 200px; /* Mantengo el tamaño grande que pediste */
-      
-      /* --- MARGEN CERO ABAJO --- */
-      margin: 0 auto 0px; 
-      
+      max-width: 340px;   /* Permite que sea más ancho */
+      height: auto;       /* ELIMINA EL ZOOM: Deja que la altura sea natural */
+      margin: 0 auto 0px; /* Pega el logo al título */
+      padding: 0;
       display: flex;
-      align-items: center;
       justify-content: center;
       background: none;
     }
 
-    /* --- TÍTULO: PEGADO AL LOGO Y AL SUBTÍTULO --- */
+    .logo-container img {
+      width: 100%;        /* Ocupa todo el ancho del contenedor */
+      height: auto;       /* Mantiene la proporción original (SIN CORTES) */
+      object-fit: contain; 
+      display: block;
+      filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.4));
+    }
+
     h1 {
+      margin: 5px 0 2px 0; /* Espacio mínimo para que no se encimen */
       color: var(--accent);
       text-align: center;
       letter-spacing: 5px;
-      font-size: 1.4rem;
-      
-      /* --- ELIMINAMOS TODOS LOS MÁRGENES --- */
-      margin: -10px 0 0 0; /* Un margen negativo de -10px lo sube aún más */
-      
+      font-size: 1.5rem;
       text-transform: uppercase;
       font-weight: 900;
     }
