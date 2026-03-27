@@ -174,6 +174,39 @@
       border-radius: 8px;
     }
 
+    /* --- CORRECCIÓN DEL TAMAÑO DEL LOGO --- */
+    .logo-container {
+      /* Reducimos el contenedor visual */
+      width: 80px;  /* Antes 100px */
+      height: 80px; /* Antes 100px */
+      margin: 0 auto 15px; /* Menos margen inferior */
+      border-radius: 50%;
+      background: rgba(0, 242, 254, 0.03); /* Brillo aún más sutil */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px; /* Menos padding interno */
+      overflow: hidden; /* Asegura que nada se salga del círculo */
+    }
+
+    .logo-container img {
+      /* FORZAMOS EL AJUSTE PERFECTO */
+      max-width: 90%;  /* Ocupa casi todo el ancho del contenedor */
+      max-height: 90%; /* Ocupa casi todo el alto */
+      object-fit: contain; /* Mantiene la proporción sin estirarse */
+      display: block;
+    }
+    
+    /* Pequeño ajuste al título para equilibrar */
+    h1 {
+      color: var(--accent);
+      text-align: center;
+      letter-spacing: 3px; /* Un poco menos de espacio */
+      font-size: 1.1rem;   /* Un poco más pequeño */
+      margin: 0 0 5px 0;
+      text-transform: uppercase;
+    }
+
   </style>
 </head>
 <body>
