@@ -182,7 +182,7 @@
       height: 220px;      /* AUMENTO DRASTICO DE ALTURA (Antes 120px/180px) */
       
       /* --- REDUCCIÓN DE ESPACIOS BAJO EL LOGO --- */
-      margin: 0 auto 5px; /* Margen inferior mínimo para que casi toque el título */
+      margin: 0 auto 0px; /* Margen inferior mínimo para que casi toque el título */
       
       display: flex;
       align-items: center;
@@ -193,43 +193,46 @@
       overflow: hidden;   /* Asegura ajuste perfecto */
     }
 
-    .logo-container img {
-      /* MÁXIMA ESCALA SIN DEFORMACIÓN */
-      width: auto;        /* Mantiene proporción */
-      height: 100%;       /* Escala para llenar los 220px de altura */
-      max-width: 100%;    /* Asegura que no se salga de la tarjeta */
-      object-fit: contain; /* Ajuste perfecto sin estirarse ni cortarse */
-      display: block;
+ /* --- LOGO: SIN ESPACIO INFERIOR --- */
+    .logo-container {
+      width: 100%;
+      max-width: 320px;
+      height: 200px; /* Mantengo el tamaño grande que pediste */
       
-      /* EFECTO DE RESALTE NEÓN NEÓN (OPCIONAL) */
-      filter: drop-shadow(0 0 20px rgba(0, 242, 254, 0.5)); /* Brillo más intenso por mayor tamaño */
+      /* --- MARGEN CERO ABAJO --- */
+      margin: 0 auto 0px; 
+      
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
     }
-    
-    /* --- 2. AJUSTE COMPACTO DE TÍTULOS --- */
+
+    /* --- TÍTULO: PEGADO AL LOGO Y AL SUBTÍTULO --- */
     h1 {
       color: var(--accent);
       text-align: center;
-      letter-spacing: 5px; /* Espaciado premium */
-      font-size: 1.4rem;   /* Aumentamos un poco por equilibrio visual */
+      letter-spacing: 5px;
+      font-size: 1.4rem;
       
-      /* --- ESPACIOS MÍNIMOS ARRIBA Y ABAJO --- */
-      margin: 0 0 2px 0;   /* Casi pegado al logo arriba y al subtítulo abajo */
+      /* --- ELIMINAMOS TODOS LOS MÁRGENES --- */
+      margin: -10px 0 0 0; /* Un margen negativo de -10px lo sube aún más */
       
       text-transform: uppercase;
-      font-weight: 900;    /* Máximo grosor */
+      font-weight: 900;
     }
 
+    /* --- SUBTÍTULO: PEGADO AL H1 --- */
     .subtitle {
       text-align: center;
       color: #666;
       font-size: 10px;
       
-      /* --- ESPACIO COMPACTO ANTES DEL INPUT --- */
-      margin: 0 0 25px 0;  /* Espacio equilibrado para separar del input (Antes 40px) */
+      /* --- MARGEN MÍNIMO ARRIBA Y ESPACIO ANTES DEL INPUT --- */
+      margin: 2px 0 30px 0; 
       
       letter-spacing: 2px;
       text-transform: uppercase;
-      opacity: 0.8;
     }
 
   </style>
