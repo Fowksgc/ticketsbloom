@@ -166,61 +166,64 @@
     }
 
     async function generarVenta() {
-        const nombreRaw = document.getElementById('nombre-cliente').value.trim();
-        const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
-        
-        // Normalizamos el nombre (limpiamos espacios y mayúsculas)
-        const nombre = nombreRaw.toUpperCase();
+    const nombreRaw = document.getElementById('nombre-cliente').value.trim();
+    const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
+    
+    const nombre = nombreRaw.toUpperCase();
 
-        if(!nombre || !whatsapp) return alert("Completa todos los datos");
+    if(!nombre || !whatsapp) return alert("Completa todos los datos");
 
-        // Generamos un código único aleatorio corto
-        const codigoUnico = Math.random().toString(36).substr(2, 6).toUpperCase();
+    // Generamos un código único aleatorio corto
+    const codigoUnico = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const textoParaQR = `${nombre}|${codigoUnico}`;
 
-        // **ESTA ES LA LÍNEA CLAVE**: El QR contendrá el nombre y el código
-        // Usamos el símbolo "|" como separador
-        const textoParaQR = `${nombre}|${codigoUnico}`;
+    // --- CAMBIO CLAVE 1: Agregamos .select() al final para recibir 'data' ---
+    const { data, error } = await _supabase.from('tickets').insert([{
+        codigo_qr: textoParaQR, 
+        nombre_cliente: nombre,
+        whatsapp: whatsapp,
+        tipo_entrada: entradaSeleccionada,
+        promotor: promotor,
+        usado: false
+        // No incluimos fecha_venta para que Supabase use el now() por defecto
+    }]).select(); // <--- Esto es vital para obtener la fecha que generó la DB
 
-        // Guardamos en Supabase (usamos 'textoParaQR' como el ID único)
-        const { error } = await _supabase.from('tickets').insert([{
-            codigo_qr: textoParaQR, // <- Guardamos la cadena completa
-            nombre_cliente: nombre,
-            whatsapp: whatsapp,
-            tipo_entrada: entradaSeleccionada,
-            promotor: promotor,
-            usado: false
-        }]);
-
-        if (error) {
-            // Si el nombre ya existe, Supabase dará error de unicidad
-            // (puedes ajustar esto si quieres permitir nombres duplicados)
-            return alert("Error al generar el ticket. Intenta de nuevo.");
-        }
-      if (!error && data.length > 0) {
-        // Enviar al Excel (Google Sheets)
-        reportarVentaASheets(data[0]); 
-        
-        // 3. Lógica para mostrar el QR al cliente
-        generarQR(codigoUnico); 
-        
-        // Limpiar formulario o mostrar éxito
-        alert("¡Entrada generada y registrada en el Excel!");
+    if (error) {
+        console.error(error);
+        return alert("Error al generar el ticket. Intenta de nuevo.");
     }
 
-        datosTicket = { nombre, codigo: textoParaQR, whatsapp, entrada: entradaSeleccionada };
+    // --- CAMBIO CLAVE 2: Validamos que 'data' exista y tenga contenido ---
+    if (data && data.length > 0) {
+        // Enviar al Excel con la fecha real de la base de datos
+        reportarVentaASheets(data[0]); 
+        
+        // Guardamos para uso local
+        datosTicket = { 
+            nombre, 
+            codigo: textoParaQR, 
+            whatsapp, 
+            entrada: entradaSeleccionada 
+        };
 
+        // UI: Pasamos al paso del QR
         irAPaso(3);
         
-        // Generamos el QR FÍSICAMENTE con el nombre incluido
+        // Generamos el QR
+        document.getElementById("qrcode").innerHTML = ""; // Limpiamos QR anterior
         new QRCode(document.getElementById("qrcode"), { 
             text: textoParaQR, 
             width: 180, 
             height: 180,
-            correctLevel : QRCode.CorrectLevel.H // Alta corrección para que sea fácil de leer
+            correctLevel : QRCode.CorrectLevel.H
         });
 
-       document.getElementById('info-final').innerHTML = `<b>${nombre}</b><br><span style="color:var(--accent); font-size:12px;">${entradaSeleccionada}</span>`;
+        document.getElementById('info-final').innerHTML = `
+            <b>${nombre}</b><br>
+            <span style="color:var(--accent); font-size:12px;">${entradaSeleccionada}</span>
+        `;
     }
+}
 
     function enviarWhatsApp() {
     // Hemos quitado la línea de *Código:* del mensaje
