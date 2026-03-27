@@ -233,6 +233,60 @@ if (!promotorLogueado) {
 // Si llega aquí, es porque hay alguien. Ahora sí definimos el nombre.
 const PROMOTOR_NOMBRE = promotorLogueado;
 document.getElementById('display-promotor').innerText = PROMOTOR_NOMBRE;
+
+  function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  
+  // ACCIÓN 1: REGISTRAR VENTA (Desde entradas.html)
+  if (data.accion === "venta") {
+    sheet.appendRow([
+      data.id,
+      new Date(), 
+      data.cliente,
+      data.tipo,
+      data.promotor,
+      data.codigo,
+      "Vendido" // Columna G: Estado inicial
+    ]);
+  } 
+  
+  // ACCIÓN 2: ACTUALIZAR INGRESO (Desde scanner.html)
+  else if (data.accion === "ingreso") {
+    var rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][5] == data.codigo) { // Busca por el Código QR (Columna F)
+        sheet.getRange(i + 1, 7).setValue("INGRESADO"); // Actualiza Columna G
+        sheet.getRange(i + 1, 7).setBackground("#00ff88"); // Opcional: Color verde
+        break;
+      }
+    }
+  }
+
+  return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+}
+
+  async function reportarVentaASheets(ticket) {
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyRUN_fjCn_sIuFbFNVYvBPoIYFq5c1qGAizfGm5X5mAY71rtDEWwFhzesp55UIDmwC/exec"; 
+
+    const payload = {
+        accion: "venta",
+        id: ticket.id,
+        cliente: ticket.nombre_cliente,
+        tipo: ticket.tipo_entrada,
+        promotor: localStorage.getItem('promotor_activo'),
+        codigo: ticket.codigo_qr
+    };
+
+    // Usamos 'no-cors' para que Google no bloquee la petición desde Vercel
+    fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify(payload)
+    });
+}
+  
 </script>
 
 </body>
