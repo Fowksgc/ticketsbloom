@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TicketsBloom - Generar Ticket</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <style>
+    :root {
+      --bg: #050509; --card: #10101e; --accent: #00f2fe; --border: #1f1f33; --text: #ffffff; --input-bg: #080812;
+    }
+
+    body {
+      font-family: -apple-system, sans-serif; background-color: var(--bg); color: var(--text);
+      margin: 0; display: flex; justify-content: center; padding-top: 20px;
+    }
+
+    .container {
+      width: 92%; max-width: 400px; background: var(--card); padding: 25px;
+      border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    h2 { color: var(--accent); text-align: center; letter-spacing: 3px; font-size: 1.3rem; margin: 0; }
+    .subtitle { text-align: center; color: #666; font-size: 10px; margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ESTADOS DE LA PANTALLA */
+    .step { display: none; animation: fadeIn 0.4s ease; }
+    .active { display: block; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+
+    /* PASO 1: BOTONES */
+    .grid-precios { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-precio {
+      background: var(--input-bg); border: 1px solid var(--border); padding: 20px 10px;
+      border-radius: 18px; color: white; cursor: pointer; text-align: center; transition: 0.2s;
+    }
+    .btn-precio b { display: block; font-size: 14px; margin-bottom: 5px; }
+    .btn-precio span { color: var(--accent); font-weight: bold; font-size: 15px; }
+
+    /* PASO 2: FORMULARIO */
+    input {
+      width: 100%; padding: 16px; background: var(--input-bg); border: 1px solid var(--border);
+      border-radius: 15px; color: white; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .btn-main {
+      width: 100%; padding: 18px; background: linear-gradient(135deg, #007aff, var(--accent));
+      border: none; border-radius: 16px; color: #000; font-weight: 800; font-size: 15px; cursor: pointer; text-transform: uppercase;
+    }
+
+    .btn-back {
+      background: none; border: none; color: #666; font-size: 12px; width: 100%; margin-top: 15px; cursor: pointer;
+    }
+
+    /* RESULTADO */
+    #qr-result { text-align: center; }
+    #qrcode { background: white; padding: 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; }
+    .info-final { font-size: 14px; line-height: 1.6; border-top: 1px solid #333; padding-top: 15px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>TICKETSBLOOM</h2>
+    <div class="subtitle" id="promotor-tag">PROMOTOR: CARGANDO...</div>
+
+    <div id="step-1" class="step active">
+        <label>Selecciona Tipo de Entrada</label>
+        <div id="grid-precios" class="grid-precios">
+            </div>
+    </div>
+
+    <div id="step-2" class="step">
+        <label id="label-seleccionada" style="color: #fff; background: rgba(0,242,254,0.1); padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 20px; border: 1px dashed var(--accent);"></label>
+        
+        <label>Nombre Completo (Aparecerá en el QR)</label>
+        <input type="text" id="nombre-cliente" placeholder="Nombre del cliente">
+
+        <label>WhatsApp</label>
+        <input type="tel" id="whatsapp-cliente" placeholder="Número">
+
+        <button class="btn-main" onclick="generarVenta()">Finalizar y Crear QR</button>
+        <button class="btn-back" onclick="irAPaso(1)">← Cambiar tipo de entrada</button>
+    </div>
+
+    <div id="step-3" class="step">
+        <div id="qr-result">
+            <div id="qrcode"></div>
+            <div class="info-final" id="info-final"></div>
+            <button class="btn-main" style="background: #25D366; color: white; margin-top: 15px;" onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
+            <button class="btn-back" onclick="location.reload()">+ Nueva Venta</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://nakrilawyrppxvjnrbks.supabase.co/'; 
+    const SUPABASE_KEY = 'sb_publishable_JJGnQbTeKrQ8m02e76pZpg_nJ9lGp0m';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let entradaSeleccionada = null;
+    let datosTicket = null; // Para guardar lo que se enviará por WhatsApp
+    const promotor = localStorage.getItem('promotor_activo') || 'Invitado';
+    document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotor.toUpperCase();
+
+    async function cargarPrecios() {
+        const grid = document.getElementById('grid-precios');
+        const { data, error } = await _supabase.from('precios').select('*').order('precio', { ascending: true });
+
+        if (error) return grid.innerHTML = "<p>Error</p>";
+
+        grid.innerHTML = "";
+        data.forEach(p => {
+            const btn = document.createElement('div');
+            btn.className = 'btn-precio';
+            btn.innerHTML = `<b>${p.tipo_entrada}</b><span>S/ ${p.precio}</span>`;
+            btn.onclick = () => {
+                entradaSeleccionada = p.tipo_entrada;
+                document.getElementById('label-seleccionada').innerText = "ENTRADA: " + p.tipo_entrada.toUpperCase();
+                irAPaso(2);
+            };
+            grid.appendChild(btn);
+        });
+    }
+
+    function irAPaso(n) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step-' + n).classList.add('active');
+    }
+
+    async function generarVenta() {
+        const nombreRaw = document.getElementById('nombre-cliente').value.trim();
+        const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
+        
+        // Normalizamos el nombre (limpiamos espacios y mayúsculas)
+        const nombre = nombreRaw.toUpperCase();
+
+        if(!nombre || !whatsapp) return alert("Completa todos los datos");
+
+        // Generamos un código único aleatorio corto
+        const codigoUnico = Math.random().toString(36).substr(2, 6).toUpperCase();
+
+        // **ESTA ES LA LÍNEA CLAVE**: El QR contendrá el nombre y el código
+        // Usamos el símbolo "|" como separador
+        const textoParaQR = `${nombre}|${codigoUnico}`;
+
+        // Guardamos en Supabase (usamos 'textoParaQR' como el ID único)
+        const { error } = await _supabase.from('tickets').insert([{
+            codigo_qr: textoParaQR, // <- Guardamos la cadena completa
+            nombre_cliente: nombre,
+            whatsapp: whatsapp,
+            tipo_entrada: entradaSeleccionada,
+            promotor: promotor,
+            usado: false
+        }]);
+
+        if (error) {
+            // Si el nombre ya existe, Supabase dará error de unicidad
+            // (puedes ajustar esto si quieres permitir nombres duplicados)
+            return alert("Error al generar el ticket. Intenta de nuevo.");
+        }
+
+        datosTicket = { nombre, codigo: textoParaQR, whatsapp, entrada: entradaSeleccionada };
+
+        irAPaso(3);
+        
+        // Generamos el QR FÍSICAMENTE con el nombre incluido
+        new QRCode(document.getElementById("qrcode"), { 
+            text: textoParaQR, 
+            width: 180, 
+            height: 180,
+            correctLevel : QRCode.CorrectLevel.H // Alta corrección para que sea fácil de leer
+        });
+
+       document.getElementById('info-final').innerHTML = `<b>${nombre}</b><br><span style="color:var(--accent); font-size:12px;">${entradaSeleccionada}</span>`;
+    }
+
+    function enviarWhatsApp() {
+    // Hemos quitado la línea de *Código:* del mensaje
+    const mensaje = `¡Hola ${datosTicket.nombre}! Aquí tienes tu entrada para el evento.%0A%0A*Ticket:* ${datosTicket.entrada}%0A%0APresenta este código QR en la puerta.`;
+    const url = `https://wa.me/${datosTicket.whatsapp.replace(/\D/g,'')}?text=${mensaje}`;
+    window.open(url, '_blank');
+}
+
+    window.onload = cargarPrecios;
+
+  // --- GUARDRIÁN DE SEGURIDAD ---
+// Dentro de entradas.html (al principio del script)
+const promotorLogueado = localStorage.getItem('promotor_activo');
+
+if (!promotorLogueado) {
+    alert("Acceso denegado. Por favor, inicia sesión.");
+    window.location.href = 'index.html'; 
+}
+
+// Si llega aquí, es porque hay alguien. Ahora sí definimos el nombre.
+const PROMOTOR_NOMBRE = promotorLogueado;
+document.getElementById('display-promotor').innerText = PROMOTOR_NOMBRE;
+</script>
+
+</body>
+</html>
