@@ -174,51 +174,62 @@
       border-radius: 8px;
     }
 
-/* --- REDISEÑO DEL LOGO: ULTRA GRANDE Y LIBRE --- */
+/* --- 1. REDISEÑO DEL LOGO: GIGANTE Y LIBRE --- */
     .logo-container {
       /* Eliminamos el círculo y fondo */
-      width: 100%;       /* Ocupa todo el ancho de la tarjeta */
-      max-width: 320px;  /* Pero no más de 320px en total (Antes 250px) */
-      height: 180px;     /* AUMENTO DRASTICO DE ALTURA (Antes 80px/120px) */
-      margin: 0 auto 30px; /* Más espacio inferior para que respire (Antes 25px) */
+      width: 100%;        /* Ocupa todo el ancho de la tarjeta */
+      max-width: 380px;   /* Escala máxima permitida (casi el ancho del login) */
+      height: 220px;      /* AUMENTO DRASTICO DE ALTURA (Antes 120px/180px) */
+      
+      /* --- REDUCCIÓN DE ESPACIOS BAJO EL LOGO --- */
+      margin: 0 auto 5px; /* Margen inferior mínimo para que casi toque el título */
+      
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0;        /* Eliminamos padding interno */
-      background: none;  /* Sin fondo circular */
-      border-radius: 0;  /* Sin bordes redondeados */
-      overflow: hidden;  /* Asegura que no se deforme */
+      padding: 0;         /* Eliminamos padding interno */
+      background: none;   /* Sin fondo circular */
+      border-radius: 0;   /* Sin bordes redondeados */
+      overflow: hidden;   /* Asegura ajuste perfecto */
     }
 
     .logo-container img {
       /* MÁXIMA ESCALA SIN DEFORMACIÓN */
-      width: auto;       /* Mantiene ancho automático según proporción */
-      height: 100%;      /* Escala el alto para llenar los 180px del contenedor */
-      max-width: 100%;   /* Asegura que no se salga de la tarjeta */
+      width: auto;        /* Mantiene proporción */
+      height: 100%;       /* Escala para llenar los 220px de altura */
+      max-width: 100%;    /* Asegura que no se salga de la tarjeta */
       object-fit: contain; /* Ajuste perfecto sin estirarse ni cortarse */
       display: block;
-      /* EFECTO DE RESALTE NEÓN (OPCIONAL - DESACTIVA SI NO TE GUSTA) */
-      filter: drop-shadow(0 0 15px rgba(0, 242, 254, 0.4)); /* Brillo cyan neón suave alrededor del PNG */
+      
+      /* EFECTO DE RESALTE NEÓN NEÓN (OPCIONAL) */
+      filter: drop-shadow(0 0 20px rgba(0, 242, 254, 0.5)); /* Brillo más intenso por mayor tamaño */
     }
     
-    /* Pequeño ajuste al título para equilibrar */
+    /* --- 2. AJUSTE COMPACTO DE TÍTULOS --- */
     h1 {
       color: var(--accent);
       text-align: center;
-      letter-spacing: 4px; /* Un poco más de espacio */
-      font-size: 1.2rem;   /* Tamaño equilibrado */
-      margin: 0 0 10px 0;   /* Más espacio inferior */
+      letter-spacing: 5px; /* Espaciado premium */
+      font-size: 1.4rem;   /* Aumentamos un poco por equilibrio visual */
+      
+      /* --- ESPACIOS MÍNIMOS ARRIBA Y ABAJO --- */
+      margin: 0 0 2px 0;   /* Casi pegado al logo arriba y al subtítulo abajo */
+      
       text-transform: uppercase;
+      font-weight: 900;    /* Máximo grosor */
     }
 
     .subtitle {
       text-align: center;
       color: #666;
       font-size: 10px;
-      /* --- AUMENTAMOS ESTE VALOR --- */
-      margin-bottom: 40px; 
-      letter-spacing: 1px;
+      
+      /* --- ESPACIO COMPACTO ANTES DEL INPUT --- */
+      margin: 0 0 25px 0;  /* Espacio equilibrado para separar del input (Antes 40px) */
+      
+      letter-spacing: 2px;
       text-transform: uppercase;
+      opacity: 0.8;
     }
 
   </style>
