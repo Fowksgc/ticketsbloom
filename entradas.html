@@ -182,7 +182,7 @@
 
         if (data && data.length > 0) {
             // Enviar al Excel
-            reportarVentaASheets(data[0]); 
+      
             
             datosTicket = { 
                 nombre, 
@@ -209,49 +209,6 @@
         }
     }
 
-async function reportarVentaASheets(ticket) {
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwmVwqUf2KdmZt_yy1iEWuoQiorB0sugeYUkbdDzktt03CRtYepIOr4PmmXIOZSBjHK/exec"; 
-
-    // Formateamos la fecha de manera segura
-    // Si ticket.fecha_venta no viene de Supabase, usamos la hora actual del dispositivo
-    const fechaVenta = ticket.fecha_venta ? new Date(ticket.fecha_venta) : new Date();
-    
-    const fechaFormateada = fechaVenta.toLocaleString('es-PE', { 
-        timeZone: 'America/Lima',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
-
-    const payload = {
-        accion: "venta",
-        id: ticket.id || "N/A",
-        fecha: fechaFormateada,
-        cliente: ticket.nombre_cliente || "Sin Nombre",
-        celular: ticket.whatsapp || "Sin Número",
-        tipo: ticket.tipo_entrada || "General",
-        promotor: ticket.promotor || "S/P",
-        codigo: ticket.codigo_qr
-    };
-
-    console.log("Enviando datos a Google Sheets...", payload);
-
-    try {
-        // Usamos keepalive para asegurar que la petición se complete aunque se cierre la pestaña rápido
-        await fetch(WEBHOOK_URL, { 
-            method: 'POST', 
-            mode: 'no-cors', 
-            body: JSON.stringify(payload),
-            keepalive: true 
-        });
-        console.log("✅ Registro enviado a Google Sheets");
-    } catch (error) {
-        console.error("❌ Error al reportar a Sheets:", error);
-    }
-}
 
     function enviarWhatsApp() {
         const mensaje = `¡Hola ${datosTicket.nombre}! Aquí tienes tu entrada para el evento.%0A%0A*Ticket:* ${datosTicket.entrada}%0A%0APresenta este código QR en la puerta.`;
