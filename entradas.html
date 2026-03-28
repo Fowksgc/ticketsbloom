@@ -163,7 +163,7 @@
                 </div>
             </div>
         </div>
-        <button class="btn-main" style="background: #ffffff; color: #000; margin-bottom: 10px;" onclick="descargarPDF()">Descargar PDF 📄</button>
+        <button class="btn-main" style="background: #ffffff; color: #000; margin-bottom: 10px;" onclick="descargarPDF()">Descargar PDF</button>
         <button class="btn-main" style="background: #25D366; color: white;" onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
         <button class="btn-back" onclick="window.location.replace(window.location.href)"> + Nueva Venta</button>
     </div>
@@ -278,17 +278,28 @@
         }
     }
 
-    function descargarPDF() {
-        const elemento = document.getElementById('ticket-visual');
-        const opciones = {
-            margin: 10,
-            filename: `Ticket_${datosTicket.nombre}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 3, backgroundColor: '#000000' },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opciones).from(elemento).save();
-    }
+function descargarPDF() {
+    const elemento = document.getElementById('ticket-visual');
+    
+    // Configuramos el nombre del archivo basado en el nombre del cliente
+    const nombreArchivo = `Ticket_NeonParty_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
+
+    const opciones = {
+        margin: [10, 10],
+        filename: nombreArchivo,
+        image: { type: 'jpeg', quality: 1 }, // Máxima calidad
+        html2canvas: { 
+            scale: 4, // Aumentamos la escala para que el QR no se vea pixeleado
+            useCORS: true, 
+            backgroundColor: '#000000',
+            letterRendering: true
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Ejecutamos la generación
+    html2pdf().set(opciones).from(elemento).save();
+}
 
     function enviarWhatsApp() {
         const mensaje = `¡Hola ${datosTicket.nombre}! Confirmo tu entrada para Neon Party.%0A%0A*Tipo:* ${datosTicket.entrada}%0A*Fecha:* 02 de Mayo 2026%0A%0APresenta el QR que te acabo de enviar.`;
