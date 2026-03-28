@@ -280,52 +280,68 @@
         });
     }
 
-    async function generarVenta() {
-        const nombre = document.getElementById('nombre-cliente').value.trim().toUpperCase();
-        const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
+async function generarVenta() {
+    const nombre = document.getElementById('nombre-cliente').value.trim().toUpperCase();
+    const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
 
-        if(!nombre || !whatsapp) return alert("Completa los datos");
+    if (!nombre || !whatsapp) return alert("Completa los datos del cliente");
 
-        const codigoNuevo = generarCodigoSeguro();
-        // Si hay box seleccionado, el nombre será solo "BOX X". Si no, el nombre de la entrada normal.
-        const tipoFinal = boxSeleccionado ? `BOX ${boxSeleccionado}` : entradaSeleccionada;
+    const codigoNuevo = generarCodigoSeguro();
+    const tipoFinal = boxSeleccionado ? `BOX ${boxSeleccionado}` : entradaSeleccionada;
 
-        const { data, error } = await _supabase.from('tickets').insert([{
-            codigo_qr: codigoNuevo,
-            nombre_cliente: nombre,
-            whatsapp: whatsapp,
-            tipo_entrada: tipoFinal,
-            promotor: promotorLogueado,
-            usado: false
-        }]).select();
+    // 1. Guardar en Supabase
+    const { data, error } = await _supabase.from('tickets').insert([{
+        codigo_qr: codigoNuevo,
+        nombre_cliente: nombre,
+        whatsapp: whatsapp,
+        tipo_entrada: tipoFinal,
+        promotor: promotorLogueado,
+        usado: false
+    }]).select();
 
-        if (error) return alert("Error al guardar en la base de datos.");
+    if (error) return alert("Error al guardar en la base de datos.");
 
-        if (data && data.length > 0) {
-            // BLOQUEAR BOX EN LA TABLA
-            if (boxSeleccionado) {
-                await _supabase.from('boxes').update({ estado: 'ocupado' }).eq('numero_box', boxSeleccionado);
-            }
-
-            datosTicket = { nombre, codigo: codigoNuevo, whatsapp, entrada: tipoFinal, precio: precioSeleccionado };
-            document.getElementById('res-nombre').innerText = nombre;
-            document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
-            
-            irAPaso(3);
-            const qrContainer = document.getElementById("qrcode");
-            qrContainer.innerHTML = "";
-            new QRCode(qrContainer, { text: codigoNuevo, width: 160, height: 160, correctLevel : QRCode.CorrectLevel.H });
+    if (data && data.length > 0) {
+        // 2. Bloquear el Box si aplica
+        if (boxSeleccionado) {
+            await _supabase.from('boxes').update({ estado: 'ocupado' }).eq('numero_box', boxSeleccionado);
         }
 
-          const qrPDF = document.getElementById("qrcode-pdf");
-          qrPDF.innerHTML = "";
-          new QRCode(qrPDF, { 
-              text: codigoNuevo, 
-              width: 180, 
-              height: 180, 
-              correctLevel : QRCode.CorrectLevel.H 
-          });
+        // 3. Guardar datos en la variable global para el PDF
+        datosTicket = { nombre, codigo: codigoNuevo, whatsapp, entrada: tipoFinal, precio: precioSeleccionado };
+
+        // 4. Llenar Interfaz Visual (Paso 3)
+        document.getElementById('res-nombre').innerText = nombre;
+        document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+        
+        // 5. Llenar Template del PDF (El que creamos al final del body)
+        document.getElementById('pdf-nombre').innerText = nombre;
+        document.getElementById('pdf-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+
+        // 6. Cambiar de paso
+        irAPaso(3);
+
+        // 7. Generar QR para la Pantalla (Celular)
+        const qrContainer = document.getElementById("qrcode");
+        qrContainer.innerHTML = "";
+        new QRCode(qrContainer, { 
+            text: codigoNuevo, 
+            width: 160, 
+            height: 160, 
+            correctLevel: QRCode.CorrectLevel.H 
+        });
+
+        // 8. Generar QR para el PDF (Oculto)
+        const qrPDF = document.getElementById("qrcode-pdf");
+        qrPDF.innerHTML = "";
+        new QRCode(qrPDF, { 
+            text: codigoNuevo, 
+            width: 200, // Un poco más grande para mejor calidad en PDF
+            height: 200, 
+            correctLevel: QRCode.CorrectLevel.H 
+        });
     }
+}
 
 async function descargarPDF() {
     const elemento = document.getElementById('ticket-pdf-template');
