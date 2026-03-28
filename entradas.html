@@ -108,8 +108,8 @@
             <div class="logo-subtle-container" style="display: flex; justify-content: center; margin-top: 15px; padding-top: 10px;">
                 <img src="assets/logo1.png" alt="Logo Bloom" style="width: 70px; height: auto; opacity: 0.6; mix-blend-mode: screen;">
             </div>
-            <p style="color: #00f2fe; letter-spacing: 3px; font-size: 9px; margin: 0;">TICKET GENERADO</p>
-            <h2 style="margin: 10px 0;">¡Te esperamos en Neon Party!</h2>
+
+            <h2 style="margin: 10px 0;">¡TU TICKET HA SIDO GENERADO, TE ESPERAMOS!</h2>
             <div id="qrcode"></div>
             <div class="ticket-data">
                 <div class="data-item">
@@ -120,6 +120,10 @@
                     <span class="data-label">ENTRADA</span>
                     <span id="res-tipo" class="data-value" style="color: var(--accent);">-</span>
                 </div>
+                <div class="data-item">
+                  <span class="data-label">PROMOTOR OFICIAL</span>
+                  <span id="res-promotor" class="data-value" style="font-size: 0.8rem; color: #888;">TicketsBloom Staff</span>
+              </div>
                 <div class="data-item">
                     <span class="data-label">FECHA DEL EVENTO</span>
                     <span id="res-fecha" class="data-value">02 DE MAYO 2026</span>
@@ -133,7 +137,7 @@
                </p>
             </div>
         </div>
-        <button class="btn-main" style="background: #fff; color: #000; margin-bottom: 8px;" onclick="descargarPDF()">COMPARTIR TICKET</button>
+        <button class="btn-main" style="background: #fff; color: #000; margin-bottom: 8px;" onclick="enviarTicketWhatsApp()">COMPARTIR TICKET</button>
         <button class="btn-back" onclick="window.location.reload()">+ Nueva Venta</button>
     </div>
 </div>
@@ -277,10 +281,47 @@ async function generarVenta() {
         await cargarPrecios();
     };
 
-  function descargarPDF() {
-    if (!datosTicket || !datosTicket.codigo) {
-        return alert("Primero debes generar el ticket.");
-    }
+function enviarTicketWhatsApp() {
+    if (!datosTicket) return alert("No hay datos del ticket");
+
+    // 1. Crear ventana para el PDF
+    const ventanita = window.open('', '_blank');
+    
+    // 2. Obtener solo el HTML del div del ticket
+    const clonTicket = document.getElementById('ticket-area-pdf').cloneNode(true);
+    
+    // 3. Escribir el contenido en la nueva ventana con estilos mínimos para PDF
+    ventanita.document.write(`
+        <html>
+        <head>
+            <title>Ticket - ${datosTicket.nombre}</title>
+            <style>
+                body { background: #000; display: flex; justify-content: center; padding: 20px; margin: 0; }
+                .ticket-visual { 
+                    width: 350px; border-radius: 25px; border: 1px solid #222; background: #050509; padding: 30px; 
+                    text-align: center; color: #fff; font-family: sans-serif;
+                }
+                #qrcode img { margin: 0 auto; display: block; border: 15px solid #fff; border-radius: 10px; }
+                .data-item { text-align: left; margin-bottom: 10px; }
+                .data-label { color: #555; font-size: 10px; display: block; text-transform: uppercase; }
+                .data-value { font-weight: bold; font-size: 16px; }
+                .ticket-disclaimer { margin-top: 15px; padding-top: 10px; border-top: 1px solid #222; font-size: 10px; color: #555; text-align: justify; }
+            </style>
+        </head>
+        <body onload="window.print();">
+            ${clonTicket.outerHTML}
+        </body>
+        </html>
+    `);
+
+    ventanita.document.close();
+
+    // 4. Mandar el link de WhatsApp (Opcional: puedes mandar el texto confirmando la venta)
+    setTimeout(() => {
+        const msg = `¡Hola ${datosTicket.nombre}! Confirmo tu ticket para Neon Party. Te acabo de adjuntar el PDF. ¡Nos vemos el 02 de Mayo!`;
+        window.open(`https://wa.me/${datosTicket.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+    }, 1000);
+}
 
     // Abrimos el nuevo archivo PDF.html pasando el ID único
     const urlTicket = `pdf.html?id=${datosTicket.codigo}`;
