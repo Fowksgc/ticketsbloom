@@ -7,7 +7,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
     :root {
@@ -299,99 +300,47 @@ async function generarVenta() {
         await cargarPrecios();
     };
 
-function enviarTicketWhatsApp() {
+async function enviarTicketWhatsApp() {
+    const { jsPDF } = window.jspdf;
     const elementoTicket = document.getElementById('ticket-area-pdf');
     
-    if (!elementoTicket || !datosTicket) {
-        return alert("Error al obtener los datos del ticket.");
+    if (!elementoTicket || !datosTicket) return alert("Error en datos");
+
+    try {
+        // 1. Convertimos el div en una imagen de alta calidad
+        const canvas = await html2canvas(elementoTicket, {
+            scale: 3, // Triple resolución para que el QR sea perfecto
+            backgroundColor: "#050509",
+            useCORS: true
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+
+        // 2. Creamos el PDF con el tamaño exacto del ticket
+        // Ajustamos el formato al tamaño de tu ticket estilizado
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [canvas.width / 3, canvas.height / 3] // Dividimos entre el scale para volver al tamaño real
+        });
+
+        // 3. Añadimos la imagen al PDF (sin bordes, sin URLs)
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
+
+        // 4. Descarga automática con nombre personalizado
+        const nombreArchivo = `TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
+        pdf.save(nombreArchivo);
+
+        // 5. Abrir WhatsApp con el mensaje
+        setTimeout(() => {
+            const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket descargado con éxito.*%0A%0A*Adjunta el archivo PDF que se acaba de descargar aquí abajo.* 👇`;
+            window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
+        }, 1000);
+
+    } catch (err) {
+        console.error(err);
+        alert("Error al generar el PDF");
     }
-
-    const ventanita = window.open('', '_blank');
-    const contenidoHTML = elementoTicket.innerHTML;
-
-    ventanita.document.write(`
-        <html>
-        <head>
-            <title>TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}</title>
-            <style>
-                /* 1. ELIMINAR CABECERAS, PIES Y MÁRGENES DE IMPRESIÓN */
-                @page { 
-                    margin: 0 !important; 
-                    size: auto; 
-                }
-                
-                /* 2. FORZAR FONDO NEGRO ABSOLUTO EN TODO EL DOCUMENTO */
-                html, body {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    background-color: #000 !important;
-                    width: 100%;
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-
-                body { 
-                    display: flex; 
-                    justify-content: center; 
-                    align-items: flex-start;
-                    font-family: -apple-system, sans-serif;
-                }
-
-                /* 3. CONTENEDOR QUE "EMPUJA" LOS BORDES */
-                .wrapper-pdf {
-                    background-color: #000;
-                    /* Usamos un padding grande para que si el navegador mete márgenes, */
-                    /* estos caigan sobre el fondo negro y no sobre blanco */
-                    padding: 60px 20px; 
-                    width: 100%;
-                    min-height: 100vh;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    box-sizing: border-box;
-                }
-
-                .ticket-visual { 
-                    width: 340px; 
-                    border-radius: 25px; 
-                    border: 1px solid #222; 
-                    background: #050509; 
-                    padding: 30px; 
-                    text-align: center; 
-                    color: #fff;
-                    box-shadow: 0 0 50px rgba(0,0,0,1);
-                }
-
-                /* ESTILOS INTERNOS (NITIDEZ) */
-                h2 { font-size: 1.1rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
-                #qrcode { background: #fff; padding: 12px; border-radius: 15px; display: inline-block; margin-bottom: 20px; }
-                #qrcode canvas, #qrcode img { width: 180px !important; height: 180px !important; }
-                .ticket-data { text-align: left; border-top: 1px dashed #333; padding-top: 20px; }
-                .data-item { margin-bottom: 15px; }
-                .data-label { font-size: 9px; color: #666; display: block; text-transform: uppercase; }
-                .data-value { font-size: 15px; font-weight: bold; text-transform: uppercase; color: #fff; }
-                #res-promotor, #res-tipo { color: #00f2fe !important; }
-                .ticket-disclaimer { margin-top: 15px; font-size: 10px; color: #444; text-align: justify; line-height: 1.3; }
-                .logo-subtle-container img { width: 70px; opacity: 0.6; mix-blend-mode: screen; }
-            </style>
-        </head>
-        <body onload="setTimeout(() => { window.print(); window.close(); }, 800);">
-            <div class="wrapper-pdf">
-                <div class="ticket-visual">
-                    ${contenidoHTML}
-                </div>
-            </div>
-        </body>
-        </html>
-    `);
-
-    ventanita.document.close();
-
-    // Redirección a WhatsApp
-    setTimeout(() => {
-        const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A*Adjunto tu ticket en PDF abajo.* 👇`;
-        window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
-    }, 2500);
 }
 </script>
 </body>
