@@ -117,7 +117,12 @@ background: rgba(0, 242, 254, 0.1); /* Fondo cian muy sutil */
             <div id="label-seleccionada" class="badge-informativo"></div>
         </div>
         <input type="text" id="nombre-cliente" placeholder="Nombre completo">
-        <input type="tel" id="whatsapp-cliente" placeholder="WhatsApp">
+        <input type="tel" 
+       id="whatsapp-cliente" 
+       placeholder="WhatsApp (9 dígitos)" 
+       maxlength="9" 
+       inputmode="numeric" 
+       oninput="this.value = this.value.replace(/[^0-9]/g, '');">
         <button class="btn-main" onclick="generarVenta()">Generar Ticket</button>
         <button class="btn-back" onclick="irAPaso(1)">← Volver</button>
     </div>
@@ -224,6 +229,16 @@ background: rgba(0, 242, 254, 0.1); /* Fondo cian muy sutil */
     }
 
 async function generarVenta() {
+
+  const whatsappInput = document.getElementById('whatsapp-cliente').value;
+    if (whatsappInput.length !== 9) {
+        alert("Revisa el número de WhatsApp.");
+        return; // No hace nada más
+    }
+
+    // 2. Si es válido, sigue todo tu proceso de Supabase y PDF...
+    console.log("Datos válidos, procediendo...");
+  
     const nombre = document.getElementById('nombre-cliente').value.trim().toUpperCase();
     const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
 
@@ -291,11 +306,6 @@ async function generarVenta() {
     }
 }
   
-    function enviarWhatsApp() {
-        const msg = `¡Hola ${datosTicket.nombre}! Confirmamos tu entrada para Neon Party.%0A%0A*Tipo:* ${datosTicket.entrada}%0A*Fecha:* 02 de Mayo 2026.%0A%0APresenta el QR que te acabo de entregar.`;
-        window.open(`https://wa.me/${datosTicket.whatsapp}?text=${msg}`, '_blank');
-    }
-
     window.onload = async () => {
         document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotorLogueado.toUpperCase();
         await cargarPrecios();
@@ -370,6 +380,31 @@ async function enviarTicketWhatsApp() {
         console.error("Error crítico:", err);
         alert("El sistema está lento. Por favor, intenta presionar el botón una vez más.");
     }
+}
+
+  function validarDatosCliente() {
+    const nombre = document.getElementById('nombre-cliente').value.trim();
+    const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
+
+    // Validar nombre vacío
+    if (nombre === "") {
+        alert("Por favor, ingresa el nombre del cliente.");
+        return false;
+    }
+
+    // Validar que tenga exactamente 9 dígitos y sean números
+    const regexWhatsapp = /^[0-9]{9}$/;
+    
+    if (!regexWhatsapp.test(whatsapp)) {
+        alert("El número de WhatsApp debe tener exactamente 9 dígitos numéricos.");
+        return false;
+    }
+
+    // Si todo está bien, guardamos los datos en tu objeto global
+    datosTicket.nombre = nombre;
+    datosTicket.whatsapp = "51" + whatsapp; // Agregamos el prefijo de Perú para el link de WA
+    
+    return true;
 }
 </script>
 </body>
