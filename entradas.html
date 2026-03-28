@@ -305,66 +305,75 @@ async function generarVenta() {
     }
 }
 
-async function descargarPDF() {
-    // 1. Definimos la ruta exacta (CUIDADO con las mayúsculas)
-    const rutaLogo = "assets/neon-logo.png"; 
-
-    const tempContainer = document.createElement('div');
-    // ... estilos del contenedor ...
-
-    tempContainer.innerHTML = `
-        <div style="padding: 40px; background-color: #000; text-align: center;">
-            <div style="margin-bottom: 20px;">
-                <img id="pdf-logo-img" src="${rutaLogo}" crossorigin="anonymous" style="width: 140px; height: auto;">
-            </div>
-            
-            <h1 style="color: #fff; font-size: 22px;">¡GRACIAS POR TU COMPRA!</h1>
-            
-            <div style="background: #fff; padding: 15px; display: inline-block; margin: 20px 0; border-radius: 10px;">
-                <div id="qrcode-pdf-temp"></div>
-            </div>
-
-            <div style="text-align: left; color: #fff; border-top: 1px dashed #333; padding-top: 20px;">
-                <p style="font-size: 14px;"><b>CLIENTE:</b> ${datosTicket.nombre}</p>
-                <p style="font-size: 14px;"><b>ENTRADA:</b> ${datosTicket.entrada}</p>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(tempContainer);
-
-    // 2. Generar el QR
-    new QRCode(document.getElementById("qrcode-pdf-temp"), {
-        text: datosTicket.codigo,
-        width: 180,
-        height: 180
-    });
-
-    // 3. ESPERAR A QUE LA IMAGEN CARGUE ANTES DE DISPARAR EL PDF
-    const img = document.getElementById('pdf-logo-img');
+function descargarPDF() {
+    // Abrimos la nueva pestaña
+    const ventanita = window.open('', '_blank');
     
-    const ejecutarDescarga = async () => {
-        const opciones = {
-            margin: 0,
-            filename: `Ticket_Bloom_${datosTicket.nombre}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#000000' },
-            jsPDF: { unit: 'mm', format: [105, 180], orientation: 'portrait' }
-        };
+    // Construimos el HTML del ticket para la nueva pestaña
+    ventanita.document.write(`
+        <html>
+        <head>
+            <title>Ticket - ${datosTicket.nombre}</title>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+            <style>
+                body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+                .ticket-container { 
+                    max-width: 350px; margin: 0 auto; border: 2px solid #1a1a1a; 
+                    padding: 30px; border-radius: 20px; background: #000;
+                }
+                .logo { color: #00f2fe; letter-spacing: 4px; font-weight: bold; margin-bottom: 20px; }
+                .qr-box { background: #fff; padding: 15px; display: inline-block; border-radius: 12px; margin: 20px 0; }
+                .info { text-align: left; border-top: 1px dashed #333; margin-top: 20px; padding-top: 20px; }
+                .label { font-size: 10px; color: #666; text-transform: uppercase; }
+                .val { font-size: 18px; font-weight: bold; display: block; margin-bottom: 15px; }
+                .btn-group { margin-top: 30px; display: flex; flex-direction: column; gap: 10px; }
+                .btn { 
+                    padding: 15px; border: none; border-radius: 10px; font-weight: bold; 
+                    cursor: pointer; text-decoration: none; font-size: 14px;
+                }
+                .btn-pdf { background: #00f2fe; color: #000; }
+                .btn-wsp { background: #25d366; color: #fff; }
+                @media print { .btn-group { display: none; } }
+            </style>
+        </head>
+        <body>
+            <div class="ticket-container" id="ticket">
+                <div class="logo">BLOOM EXPERIENCE</div>
+                <img src="assets/logo1.png" style="width:120px; margin-bottom:10px;">
+                <h2 style="margin:0;">NEON PARTY</h2>
+                
+                <div class="qr-box"><div id="qrcode-final"></div></div>
 
-        await html2pdf().set(opciones).from(tempContainer).save();
-        document.body.removeChild(tempContainer);
-    };
+                <div class="info">
+                    <span class="label">Propietario</span>
+                    <span class="val">${datosTicket.nombre}</span>
+                    <span class="label">Entrada</span>
+                    <span class="val" style="color:#00f2fe;">${datosTicket.entrada}</span>
+                    <span class="label">Fecha</span>
+                    <span class="val">02 DE MAYO 2026</span>
+                </div>
 
-    if (img.complete) {
-        setTimeout(ejecutarDescarga, 600);
-    } else {
-        img.onload = () => setTimeout(ejecutarDescarga, 600);
-        img.onerror = () => {
-            console.error("No se pudo cargar el logo, generando sin imagen...");
-            ejecutarDescarga();
-        };
-    }
+                <div class="btn-group">
+                    <button onclick="window.print()" class="btn btn-pdf">Descargar / Imprimir PDF</button>
+                    <a href="https://wa.me/${datosTicket.whatsapp}?text=Hola ${datosTicket.nombre}, aquí tienes tu ticket para la Neon Party: ${window.location.href}" 
+                       target="_blank" class="btn btn-wsp">Compartir por WhatsApp</a>
+                </div>
+            </div>
+
+            <script>
+                // Generar el QR una vez que la pestaña carga
+                new QRCode(document.getElementById("qrcode-final"), {
+                    text: "${datosTicket.codigo}",
+                    width: 180,
+                    height: 180,
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            </script>
+        </body>
+        </html>
+    `);
+    
+    ventanita.document.close();
 }
 
     function enviarWhatsApp() {
