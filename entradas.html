@@ -269,39 +269,39 @@ async function generarVenta() {
             await _supabase.from('boxes').update({ estado: 'ocupado' }).eq('numero_box', boxSeleccionado);
         }
 
-        // 3. Guardar datos en la variable global para el PDF
-        datosTicket = { nombre, codigo: codigoNuevo, whatsapp, entrada: tipoFinal, precio: precioSeleccionado };
+        // 3. GUARDAR DATOS GLOBALES: Esto es vital para que descargarPDF() sepa qué escribir
+        datosTicket = { 
+            nombre: nombre, 
+            codigo: codigoNuevo, 
+            whatsapp: whatsapp, 
+            entrada: tipoFinal, 
+            precio: precioSeleccionado 
+        };
 
-        // 4. Llenar Interfaz Visual (Paso 3)
-        document.getElementById('res-nombre').innerText = nombre;
-        document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+        // 4. Llenar la Interfaz que ve el promotor (Paso 3)
+        const resNombre = document.getElementById('res-nombre');
+        const resTipo = document.getElementById('res-tipo');
         
-        // 5. Llenar Template del PDF (El que creamos al final del body)
-        document.getElementById('pdf-nombre').innerText = nombre;
-        document.getElementById('pdf-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+        if(resNombre) resNombre.innerText = nombre;
+        if(resTipo) resTipo.innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
 
-        // 6. Cambiar de paso
+        // 5. Cambiar al paso de "Ticket Generado"
         irAPaso(3);
 
-        // 7. Generar QR para la Pantalla (Celular)
+        // 6. Generar QR para la Pantalla del celular (Paso 3)
         const qrContainer = document.getElementById("qrcode");
-        qrContainer.innerHTML = "";
-        new QRCode(qrContainer, { 
-            text: codigoNuevo, 
-            width: 160, 
-            height: 160, 
-            correctLevel: QRCode.CorrectLevel.H 
-        });
-
-        // 8. Generar QR para el PDF (Oculto)
-        const qrPDF = document.getElementById("qrcode-pdf");
-        qrPDF.innerHTML = "";
-        new QRCode(qrPDF, { 
-            text: codigoNuevo, 
-            width: 200, // Un poco más grande para mejor calidad en PDF
-            height: 200, 
-            correctLevel: QRCode.CorrectLevel.H 
-        });
+        if (qrContainer) {
+            qrContainer.innerHTML = "";
+            new QRCode(qrContainer, { 
+                text: codigoNuevo, 
+                width: 160, 
+                height: 160, 
+                correctLevel: QRCode.CorrectLevel.H 
+            });
+        }
+        
+        // NOTA: El QR para el PDF ya no se genera aquí, 
+        // se genera automáticamente dentro de la función descargarPDF()
     }
 }
 
