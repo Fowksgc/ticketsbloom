@@ -90,7 +90,7 @@
 
     <div id="step-box" class="step">
         <label>Mapa del Evento - NEON PARTY</label>
-        <img src="assets/logo1.png" style="width: 100%; border-radius: 15px; margin-bottom: 15px;">
+        <img src="assets/neon-logo.png" style="width: 100%; border-radius: 15px; margin-bottom: 15px;">
         <div class="grid-boxes" id="grid-boxes"></div>
         <button class="btn-back" onclick="irAPaso(1)">← Volver</button>
     </div>
@@ -106,7 +106,7 @@
     <div id="step-3" class="step">
         <div class="ticket-visual">
             <p style="color: var(--accent); font-size: 10px; letter-spacing: 3px;">BLOOM EXPERIENCE</p>
-            <h2 style="margin: 10px 0;">¡TICKET LISTO!</h2>
+            <h2 style="margin: 10px 0;">¡TICKET GENERADO!</h2>
             <div id="qrcode"></div>
             <div class="ticket-data">
                 <div class="data-item">
@@ -117,10 +117,14 @@
                     <span class="data-label">ENTRADA</span>
                     <span id="res-tipo" class="data-value" style="color: var(--accent);">-</span>
                 </div>
-              <div class="data-item">
+                <div class="data-item">
                     <span class="data-label">FECHA DEL EVENTO</span>
                     <span id="res-fecha" class="data-value">02 DE MAYO 2026</span>
-            </div>
+                </div>
+                  <div class="ticket-disclaimer" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #222; font-size: 8px; color: #555; text-align: justify; line-height: 1.3;">
+                  <b>TERMINOS Y CONDICIONES:</b> Este ticket es personal e intransferible. El código QR es válido para un solo ingreso. Prohibida su reventa o alteración. La organización se reserva el derecho de admisión. 
+                </div>
+              
             </div>
         </div>
         <button class="btn-main" style="background: #fff; color: #000; margin-bottom: 10px;" onclick="descargarPDF()">COMPARTIR TICKET</button>
