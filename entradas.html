@@ -90,6 +90,18 @@ background: rgba(0, 242, 254, 0.1); /* Fondo cian muy sutil */
     box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
     text-align: center;
     }
+
+/* Estilo para el botón cuando está desactivado en la DB */
+.btn-precio.disabled {
+    opacity: 0.3;
+    filter: grayscale(1);
+    cursor: not-allowed;
+    border: 1px dashed #444;
+}
+
+.btn-precio.disabled span {
+    color: #444; /* Apagamos el color cian del precio */
+}
   </style>
 </head>
 <body>
@@ -179,18 +191,29 @@ background: rgba(0, 242, 254, 0.1); /* Fondo cian muy sutil */
     let boxSeleccionado = null;
     const promotorLogueado = localStorage.getItem('promotor_activo') || "Invitado";
 
-    async function cargarPrecios() {
-        const grid = document.getElementById('grid-precios');
-        const { data, error } = await _supabase.from('precios').select('*').order('precio', { ascending: true });
-        if (error) return;
-        grid.innerHTML = "";
-        data.forEach(p => {
-            const btn = document.createElement('div');
-            btn.className = 'btn-precio';
-            btn.innerHTML = `<b>${p.tipo_entrada}</b><span>S/ ${p.precio}</span>`;
+async function cargarPrecios() {
+    const grid = document.getElementById('grid-precios');
+    // Traemos todos los datos de la tabla 'precios'
+    const { data, error } = await _supabase.from('precios').select('*').order('precio', { ascending: true });
+    
+    if (error) return;
+    grid.innerHTML = "";
+
+    data.forEach(p => {
+        const btn = document.createElement('div');
+        
+        // --- VALIDACIÓN DE COLUMNA "ACTIVO" ---
+        // Si p.activo es false, le ponemos la clase 'disabled'
+        btn.className = 'btn-precio' + (p.activo ? '' : ' disabled');
+        
+        btn.innerHTML = `<b>${p.tipo_entrada}</b><span>S/ ${p.precio}</span>`;
+
+        // Solo asignamos la función onclick si p.activo es true
+        if (p.activo) {
             btn.onclick = () => {
                 entradaSeleccionada = p.tipo_entrada;
                 precioSeleccionado = p.precio;
+                
                 if (p.tipo_entrada.toUpperCase().includes("BOX")) {
                     generarGridBoxes();
                     irAPaso('box');
@@ -200,9 +223,16 @@ background: rgba(0, 242, 254, 0.1); /* Fondo cian muy sutil */
                     irAPaso(2);
                 }
             };
-            grid.appendChild(btn);
-        });
-    }
+        } else {
+            // Opcional: Si está inactivo, podemos hacer que muestre un aviso al tocarlo
+            btn.onclick = () => {
+                console.log("Esta entrada no está disponible actualmente.");
+            };
+        }
+
+        grid.appendChild(btn);
+    });
+}
 
     function irAPaso(n) {
         document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
