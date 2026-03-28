@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Neon Party- Generar Ticket</title>
+  <title>Neon Party - Generar Ticket</title>
   
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -53,6 +53,16 @@
 
     .btn-back { background: none; border: none; color: #666; font-size: 12px; width: 100%; margin-top: 15px; cursor: pointer; }
 
+    /* --- ESTILO BOXES --- */
+    .grid-boxes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
+    .btn-box {
+        background: var(--input-bg); border: 1px solid var(--border); color: white; aspect-ratio: 1;
+        display: flex; align-items: center; justify-content: center; border-radius: 50%;
+        font-weight: bold; cursor: pointer; transition: 0.3s;
+    }
+    .btn-box:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-box.ocupado { background: #222; border-color: #444; color: #444; cursor: not-allowed; opacity: 0.5; }
+
     /* --- ESTILO DEL TICKET FINAL --- */
     .ticket-visual {
         background: #000; border: 1px solid #222; border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px;
@@ -71,15 +81,6 @@
 
     .logo-fest-container { width: 100%; max-width: 200px; margin: 0 auto 10px; display: flex; justify-content: center; }
     .logo-fest-container img { width: 100%; filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.3)); }
-
-    .btn-box.ocupado {
-    background: #222;
-    border-color: #444;
-    color: #444;
-    cursor: not-allowed;
-    box-shadow: none;
-    opacity: 0.5;
-}
   </style>
 </head>
 <body>
@@ -96,17 +97,13 @@
     </div>
   
     <div id="step-box" class="step">
-       <div id="step-box" class="step">
-    <label>Mapa del Evento - NEON PARTY</label>
-    <div class="mapa-container" style="width: 100%; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 1px solid var(--border);">
-        <img src="https://lh3.googleusercontent.com/d/1UgBxK65cJIA_iE7YSh5vFwsxSP03STke" alt="Mapa Boxes" style="width: 100%; display: block;">
-    </div>
-
-    <label>Selecciona un Box Disponible</label>
-    <div class="grid-boxes" id="grid-boxes">
+        <label>Mapa del Evento - NEON PARTY</label>
+        <div class="mapa-container" style="width: 100%; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 1px solid var(--border);">
+            <img src="https://lh3.googleusercontent.com/d/1UgBxK65cJIA_iE7YSh5vFwsxSP03STke" alt="Mapa Boxes" style="width: 100%; display: block;">
         </div>
-    <button class="btn-back" onclick="irAPaso(1)">← Volver a entradas</button>
-</div>
+        <label>Selecciona un Box Disponible</label>
+        <div class="grid-boxes" id="grid-boxes"></div>
+        <button class="btn-back" onclick="irAPaso(1)">← Volver a entradas</button>
     </div>
   
     <div id="step-2" class="step">
@@ -121,9 +118,7 @@
         <div id="ticket-visual" class="ticket-visual">
             <p class="ticket-title">BLOOM EXPERIENCE</p>
             <h2 class="ticket-event">¡TICKET GENERADO!</h2>
-            
             <div id="qrcode"></div>
-
             <div class="ticket-data">
                 <div class="data-item">
                     <span class="data-label">NOMBRE DEL CLIENTE</span>
@@ -139,7 +134,6 @@
                 </div>
             </div>
         </div>
-
         <button class="btn-main" style="background: #ffffff; color: #000; margin-bottom: 10px;" onclick="descargarPDF()">Descargar PDF 📄</button>
         <button class="btn-main" style="background: #25D366; color: white;" onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
         <button class="btn-back" onclick="location.reload()">+ Nueva Venta</button>
@@ -154,6 +148,7 @@
     let entradaSeleccionada = null;
     let precioSeleccionado = null;
     let datosTicket = null;
+    let boxSeleccionado = null;
     const promotorLogueado = localStorage.getItem('promotor_activo') || "Invitado";
 
     document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotorLogueado.toUpperCase();
@@ -170,8 +165,14 @@
             btn.onclick = () => {
                 entradaSeleccionada = p.tipo_entrada;
                 precioSeleccionado = p.precio;
-                document.getElementById('label-seleccionada').innerText = p.tipo_entrada + " - S/ " + p.precio;
-                irAPaso(2);
+                if (p.tipo_entrada.toUpperCase().includes("BOX")) {
+                    generarGridBoxes();
+                    irAPaso('box');
+                } else {
+                    boxSeleccionado = null;
+                    document.getElementById('label-seleccionada').innerText = p.tipo_entrada + " - S/ " + p.precio;
+                    irAPaso(2);
+                }
             };
             grid.appendChild(btn);
         });
@@ -179,68 +180,71 @@
 
     function irAPaso(n) {
         document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-        document.getElementById('step-' + n).classList.add('active');
+        const target = n === 'box' ? 'step-box' : 'step-' + n;
+        document.getElementById(target).classList.add('active');
     }
 
-async function generarVenta() {
-    const nombre = document.getElementById('nombre-cliente').value.trim().toUpperCase();
-    const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
+    async function generarGridBoxes() {
+        const grid = document.getElementById('grid-boxes');
+        grid.innerHTML = "<p style='grid-column: span 5; text-align:center; font-size:10px;'>Verificando disponibilidad...</p>";
 
-    if(!nombre || !whatsapp) return alert("Completa los datos");
+        const { data: listaBoxes, error } = await _supabase.from('boxes').select('*').order('numero_box', { ascending: true });
 
-    const codigoNuevo = generarCodigoSeguro();
+        grid.innerHTML = "";
+        if (error) return grid.innerHTML = "Error al cargar boxes";
 
-    // 1. Definimos el nombre final de la entrada (Si hay box, lo incluimos)
-    // Esto es vital para que la función de bloqueo detecte el box ocupado
-    const tipoFinal = boxSeleccionado ? `${entradaSeleccionada} (BOX ${boxSeleccionado})` : entradaSeleccionada;
+        listaBoxes.forEach(box => {
+            const btn = document.createElement('div');
+            btn.className = 'btn-box' + (box.estado === 'ocupado' ? ' ocupado' : '');
+            btn.innerText = box.numero_box;
 
-    const { data, error } = await _supabase.from('tickets').insert([{
-        codigo_qr: codigoNuevo,
-        nombre_cliente: nombre,
-        whatsapp: whatsapp,
-        tipo_entrada: tipoFinal, // <--- Guardamos con el (BOX X)
-        promotor: promotorLogueado,
-        usado: false
-    }]).select();
-
-    if (error) {
-        console.error(error);
-        return alert("Error al guardar en la base de datos.");
-    }
-
-    if (data && data.length > 0) {
-        // 2. Guardamos los datos para el PDF y WhatsApp
-        datosTicket = { 
-            nombre, 
-            codigo: codigoNuevo, 
-            whatsapp, 
-            entrada: tipoFinal, 
-            precio: precioSeleccionado 
-        };
-        
-        // 3. Llenar datos en el Ticket Visual (Paso 3)
-        document.getElementById('res-nombre').innerText = nombre;
-        
-        // Si es box, mostramos el nombre completo con el número
-        document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
-        
-        // 4. Cambiar al paso final
-        irAPaso(3);
-        
-        // 5. Generar QR
-        const qrContainer = document.getElementById("qrcode");
-        qrContainer.innerHTML = "";
-        new QRCode(qrContainer, { 
-            text: codigoNuevo, 
-            width: 160, 
-            height: 160,
-            correctLevel : QRCode.CorrectLevel.H
+            if (box.estado !== 'ocupado') {
+                btn.onclick = () => {
+                    boxSeleccionado = box.numero_box;
+                    document.getElementById('label-seleccionada').innerText = `${entradaSeleccionada} - BOX ${box.numero_box} - S/ ${precioSeleccionado}`;
+                    irAPaso(2);
+                };
+            }
+            grid.appendChild(btn);
         });
-
-        // 6. Limpiar el box seleccionado para la siguiente venta
-        boxSeleccionado = null; 
     }
-}
+
+    async function generarVenta() {
+        const nombre = document.getElementById('nombre-cliente').value.trim().toUpperCase();
+        const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
+
+        if(!nombre || !whatsapp) return alert("Completa los datos");
+
+        const codigoNuevo = generarCodigoSeguro();
+        const tipoFinal = boxSeleccionado ? `${entradaSeleccionada} (BOX ${boxSeleccionado})` : entradaSeleccionada;
+
+        const { data, error } = await _supabase.from('tickets').insert([{
+            codigo_qr: codigoNuevo,
+            nombre_cliente: nombre,
+            whatsapp: whatsapp,
+            tipo_entrada: tipoFinal,
+            promotor: promotorLogueado,
+            usado: false
+        }]).select();
+
+        if (error) return alert("Error al guardar en la base de datos.");
+
+        if (data && data.length > 0) {
+            // BLOQUEAR BOX EN LA TABLA
+            if (boxSeleccionado) {
+                await _supabase.from('boxes').update({ estado: 'ocupado' }).eq('numero_box', boxSeleccionado);
+            }
+
+            datosTicket = { nombre, codigo: codigoNuevo, whatsapp, entrada: tipoFinal, precio: precioSeleccionado };
+            document.getElementById('res-nombre').innerText = nombre;
+            document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+            
+            irAPaso(3);
+            const qrContainer = document.getElementById("qrcode");
+            qrContainer.innerHTML = "";
+            new QRCode(qrContainer, { text: codigoNuevo, width: 160, height: 160, correctLevel : QRCode.CorrectLevel.H });
+        }
+    }
 
     function descargarPDF() {
         const elemento = document.getElementById('ticket-visual');
@@ -267,45 +271,6 @@ async function generarVenta() {
     }
 
     window.onload = cargarPrecios;
-
-  async function generarGridBoxes() {
-    const grid = document.getElementById('grid-boxes');
-    grid.innerHTML = "<p style='grid-column: span 5; text-align:center; font-size:10px;'>Verificando disponibilidad...</p>";
-
-    // 1. Consultamos a Supabase qué boxes ya están vendidos
-    // Buscamos en la columna 'tipo_entrada' cualquier registro que contenga el nombre de la entrada elegida
-    const { data: vendidos, error } = await _supabase
-        .from('tickets')
-        .select('tipo_entrada')
-        .ilike('tipo_entrada', `%${entradaSeleccionada}%`); // Filtra por el nombre del Box (ej: Box Gold)
-
-    grid.innerHTML = "";
-
-    // 2. Creamos los 10 botones
-    for (let i = 1; i <= 10; i++) {
-        const btn = document.createElement('div');
-        btn.className = 'btn-box';
-        btn.innerText = i;
-
-        // 3. Verificamos si este número de box ya está en la lista de vendidos
-        // Ejemplo de texto buscado: "BOX GOLD (BOX 1)"
-        const textoBusqueda = `(BOX ${i})`;
-        const estaOcupado = vendidos.some(t => t.tipo_entrada.includes(textoBusqueda));
-
-        if (estaOcupado) {
-            btn.classList.add('ocupado');
-            btn.title = "No disponible";
-        } else {
-            btn.onclick = () => {
-                boxSeleccionado = i;
-                irAPaso(2); // Al elegir uno libre, va al nombre del cliente
-                document.getElementById('label-seleccionada').innerText = `${entradaSeleccionada} - BOX ${i} - S/ ${precioSeleccionado}`;
-            };
-        }
-        grid.appendChild(btn);
-    }
-}
 </script>
-
 </body>
 </html>
