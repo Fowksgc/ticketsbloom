@@ -185,7 +185,7 @@
             
             datosTicket = { 
                 nombre, 
-                codigo: textoParaQR, 
+                codigo: codigoNuevo, 
                 whatsapp, 
                 entrada: entradaSeleccionada 
             };
@@ -195,7 +195,7 @@
             const qrContainer = document.getElementById("qrcode");
             qrContainer.innerHTML = ""; 
             new QRCode(qrContainer, { 
-                text: textoParaQR, 
+                text: codigoNuevo, 
                 width: 180, 
                 height: 180,
                 correctLevel : QRCode.CorrectLevel.H
