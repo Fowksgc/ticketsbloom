@@ -303,55 +303,74 @@ async function enviarTicketWhatsApp() {
     const elementoTicket = document.getElementById('ticket-area-pdf');
     
     if (!elementoTicket || !datosTicket) {
-        return alert("Error al obtener los datos del ticket.");
+        return alert("Error: No se encontraron los datos del ticket.");
     }
 
-    // 1. Capturar el DIV como una imagen de alta calidad
-    // Usamos scale: 2 para que el QR y los textos no salgan borrosos
-    const canvas = await html2canvas(elementoTicket, {
-        scale: 2,
-        backgroundColor: "#050509", // Forzamos tu color de fondo
-        logging: false,
-        useCORS: true
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-
-    // 2. Abrir ventana para "Imprimir como PDF"
+    // 1. Abrimos la ventana de inmediato para evitar el bloqueo de pop-ups en móvil
     const ventanita = window.open('', '_blank');
-    
     ventanita.document.write(`
         <html>
-        <head>
-            <title>TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}</title>
-            <style>
-                @page { margin: 0; size: auto; }
-                body { 
-                    margin: 0; background: #000; 
-                    display: flex; justify-content: center; align-items: flex-start;
-                }
-                img { 
-                    max-width: 100%; 
-                    height: auto; 
-                    display: block;
-                    margin: 20px auto;
-                    border-radius: 20px;
-                }
-            </style>
-        </head>
-        <body onload="setTimeout(() => { window.print(); window.close(); }, 500);">
-            <img src="${imgData}" />
+        <head><title>Generando Ticket...</title></head>
+        <body style="background:#000; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+            <div style="text-align:center;">
+                <div style="border: 4px solid #f3f3f3; border-top: 4px solid #00f2fe; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                <p>Preparando tu ticket seguro...</p>
+            </div>
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
         </body>
         </html>
     `);
 
-    ventanita.document.close();
+    try {
+        // 2. Convertimos el DIV en una imagen (Snapshot)
+        // Esto "congela" el ticket: ya no es código editable, es una foto.
+        const canvas = await html2canvas(elementoTicket, {
+            scale: 3, // Alta resolución para que el QR no falle al escanear
+            backgroundColor: "#050509",
+            useCORS: true,
+            logging: false
+        });
 
-    // 3. Redirección a WhatsApp con el mensaje listo
+        const imgData = canvas.toDataURL('image/png');
+
+        // 3. Reemplazamos el contenido de la ventana con la imagen lista para imprimir
+        ventanita.document.body.innerHTML = ""; 
+        ventanita.document.write(`
+            <html>
+            <head>
+                <title>TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}</title>
+                <style>
+                    @page { margin: 0; size: auto; }
+                    body { margin: 0; background: #000; display: flex; justify-content: center; align-items: flex-start; }
+                    img { 
+                        width: 100%; 
+                        max-width: 500px; /* Tamaño ideal para que no se pixelee */
+                        height: auto; 
+                        display: block; 
+                        margin: 0 auto;
+                        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+                    }
+                </style>
+            </head>
+            <body onload="setTimeout(() => { window.print(); window.close(); }, 800);">
+                <img src="${imgData}" />
+            </body>
+            </html>
+        `);
+        ventanita.document.close();
+
+    } catch (err) {
+        console.error("Error al generar imagen:", err);
+        ventanita.close();
+        alert("Error de renderizado. Inténtalo de nuevo.");
+    }
+
+    // 4. Redirección a WhatsApp con mensaje predeterminado
     setTimeout(() => {
-        const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A📌 *Detalles:*%0A- Tipo: ${datosTicket.entrada}%0A- Fecha: 02 de Mayo 2026%0A%0A*Guarda el PDF que acabas de generar y adjúntalo aquí.* 👇`;
-        window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
-    }, 2000);
+        const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ Tu ticket ha sido generado con éxito.%0A%0A*Por favor, adjunta el PDF que acabas de guardar aquí abajo.* 👇`;
+        const urlWa = `https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`;
+        window.open(urlWa, '_blank');
+    }, 2500);
 }
 </script>
 </body>
