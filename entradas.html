@@ -242,18 +242,8 @@ async function generarVenta() {
     const nombre = document.getElementById('nombre-cliente').value.trim().toUpperCase();
     const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
 
-  const ahora = new Date();
-    const fechaPeru = ahora.toLocaleString('es-PE', { 
-        timeZone: 'America/Lima',
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit',
-        hour12: false 
-    }).replace(/,/g, '');
-
+  
+    const fecha_venta = new Date().toISOString();
     if (!nombre || !whatsapp) return alert("Completa los datos del cliente");
 
     // Generar código único para el ticket
@@ -267,9 +257,25 @@ async function generarVenta() {
         whatsapp: whatsapp,
         tipo_entrada: tipoFinal,
         promotor: promotorLogueado,
-        fecha_venta:fechaPeru,
+        fecha_venta:fecha_venta,
         usado: false
     }]).select();
+  try {
+        const { data, error } = await _supabase
+            .from('tickets')
+            .insert([datosVenta])
+            .select();
+
+        if (error) throw error;
+
+        console.log("Venta guardada exitosamente");
+        await enviarTicketWhatsApp(); 
+
+    } catch (error) {
+        console.error("Error:", error.message);
+        alert("Error al guardar: " + error.message);
+    }
+}
 
     if (error) return alert("Error al guardar venta en la base de datos.");
 
