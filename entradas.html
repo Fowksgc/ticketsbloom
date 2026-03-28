@@ -71,6 +71,15 @@
 
     .logo-fest-container { width: 100%; max-width: 200px; margin: 0 auto 10px; display: flex; justify-content: center; }
     .logo-fest-container img { width: 100%; filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.3)); }
+
+    .btn-box.ocupado {
+    background: #222;
+    border-color: #444;
+    color: #444;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.5;
+}
   </style>
 </head>
 <body>
@@ -85,7 +94,21 @@
         <label>Selecciona Tipo de Entrada</label>
         <div id="grid-precios" class="grid-precios"></div>
     </div>
+  
+    <div id="step-box" class="step">
+       <div id="step-box" class="step">
+    <label>Mapa del Evento - NEON PARTY</label>
+    <div class="mapa-container" style="width: 100%; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 1px solid var(--border);">
+        <img src="URL_DE_TU_IMAGEN_AQUI" alt="Mapa Boxes" style="width: 100%; display: block;">
+    </div>
 
+    <label>Selecciona un Box Disponible</label>
+    <div class="grid-boxes" id="grid-boxes">
+        </div>
+    <button class="btn-back" onclick="irAPaso(1)">← Volver a entradas</button>
+</div>
+    </div>
+  
     <div id="step-2" class="step">
         <label id="label-seleccionada" style="color: #fff; background: rgba(0,242,254,0.1); padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 20px; border: 1px dashed var(--accent);"></label>
         <input type="text" id="nombre-cliente" placeholder="Nombre completo">
@@ -159,40 +182,65 @@
         document.getElementById('step-' + n).classList.add('active');
     }
 
-    async function generarVenta() {
-        const nombre = document.getElementById('nombre-cliente').value.trim().toUpperCase();
-        const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
+async function generarVenta() {
+    const nombre = document.getElementById('nombre-cliente').value.trim().toUpperCase();
+    const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
 
-        if(!nombre || !whatsapp) return alert("Completa los datos");
+    if(!nombre || !whatsapp) return alert("Completa los datos");
 
-        const codigoNuevo = generarCodigoSeguro();
+    const codigoNuevo = generarCodigoSeguro();
 
-        const { data, error } = await _supabase.from('tickets').insert([{
-            codigo_qr: codigoNuevo,
-            nombre_cliente: nombre,
-            whatsapp: whatsapp,
-            tipo_entrada: entradaSeleccionada,
-            promotor: promotorLogueado,
-            usado: false
-        }]).select();
+    // 1. Definimos el nombre final de la entrada (Si hay box, lo incluimos)
+    // Esto es vital para que la función de bloqueo detecte el box ocupado
+    const tipoFinal = boxSeleccionado ? `${entradaSeleccionada} (BOX ${boxSeleccionado})` : entradaSeleccionada;
 
-        if (error) return alert("Error al guardar");
+    const { data, error } = await _supabase.from('tickets').insert([{
+        codigo_qr: codigoNuevo,
+        nombre_cliente: nombre,
+        whatsapp: whatsapp,
+        tipo_entrada: tipoFinal, // <--- Guardamos con el (BOX X)
+        promotor: promotorLogueado,
+        usado: false
+    }]).select();
 
-        if (data) {
-            datosTicket = { nombre, codigo: codigoNuevo, whatsapp, entrada: entradaSeleccionada, precio: precioSeleccionado };
-            
-            // Llenar datos en el Ticket Visual
-            document.getElementById('res-nombre').innerText = nombre;
-            document.getElementById('res-tipo').innerText = `${entradaSeleccionada} - S/ ${precioSeleccionado}`;
-            
-            irAPaso(3);
-            
-            // Generar QR
-            const qrContainer = document.getElementById("qrcode");
-            qrContainer.innerHTML = "";
-            new QRCode(qrContainer, { text: codigoNuevo, width: 160, height: 160 });
-        }
+    if (error) {
+        console.error(error);
+        return alert("Error al guardar en la base de datos.");
     }
+
+    if (data && data.length > 0) {
+        // 2. Guardamos los datos para el PDF y WhatsApp
+        datosTicket = { 
+            nombre, 
+            codigo: codigoNuevo, 
+            whatsapp, 
+            entrada: tipoFinal, 
+            precio: precioSeleccionado 
+        };
+        
+        // 3. Llenar datos en el Ticket Visual (Paso 3)
+        document.getElementById('res-nombre').innerText = nombre;
+        
+        // Si es box, mostramos el nombre completo con el número
+        document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+        
+        // 4. Cambiar al paso final
+        irAPaso(3);
+        
+        // 5. Generar QR
+        const qrContainer = document.getElementById("qrcode");
+        qrContainer.innerHTML = "";
+        new QRCode(qrContainer, { 
+            text: codigoNuevo, 
+            width: 160, 
+            height: 160,
+            correctLevel : QRCode.CorrectLevel.H
+        });
+
+        // 6. Limpiar el box seleccionado para la siguiente venta
+        boxSeleccionado = null; 
+    }
+}
 
     function descargarPDF() {
         const elemento = document.getElementById('ticket-visual');
@@ -219,6 +267,44 @@
     }
 
     window.onload = cargarPrecios;
+
+  async function generarGridBoxes() {
+    const grid = document.getElementById('grid-boxes');
+    grid.innerHTML = "<p style='grid-column: span 5; text-align:center; font-size:10px;'>Verificando disponibilidad...</p>";
+
+    // 1. Consultamos a Supabase qué boxes ya están vendidos
+    // Buscamos en la columna 'tipo_entrada' cualquier registro que contenga el nombre de la entrada elegida
+    const { data: vendidos, error } = await _supabase
+        .from('tickets')
+        .select('tipo_entrada')
+        .ilike('tipo_entrada', `%${entradaSeleccionada}%`); // Filtra por el nombre del Box (ej: Box Gold)
+
+    grid.innerHTML = "";
+
+    // 2. Creamos los 10 botones
+    for (let i = 1; i <= 10; i++) {
+        const btn = document.createElement('div');
+        btn.className = 'btn-box';
+        btn.innerText = i;
+
+        // 3. Verificamos si este número de box ya está en la lista de vendidos
+        // Ejemplo de texto buscado: "BOX GOLD (BOX 1)"
+        const textoBusqueda = `(BOX ${i})`;
+        const estaOcupado = vendidos.some(t => t.tipo_entrada.includes(textoBusqueda));
+
+        if (estaOcupado) {
+            btn.classList.add('ocupado');
+            btn.title = "No disponible";
+        } else {
+            btn.onclick = () => {
+                boxSeleccionado = i;
+                irAPaso(2); // Al elegir uno libre, va al nombre del cliente
+                document.getElementById('label-seleccionada').innerText = `${entradaSeleccionada} - BOX ${i} - S/ ${precioSeleccionado}`;
+            };
+        }
+        grid.appendChild(btn);
+    }
+}
 </script>
 
 </body>
