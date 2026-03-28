@@ -257,49 +257,6 @@ async function generarVenta() {
     }
 }
 
-    function descargarPDF() {
-        const ventanita = window.open('', '_blank');
-        ventanita.document.write(`
-            <html>
-            <head>
-                <title>Ticket Bloom - ${datosTicket.nombre}</title>
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
-                <style>
-                    body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 40px; }
-                    .ticket { max-width: 350px; margin: 0 auto; border: 1px solid #222; padding: 30px; border-radius: 20px; }
-                    .qr-bg { background: #fff; padding: 15px; display: inline-block; border-radius: 10px; margin: 20px 0; }
-                    .info { text-align: left; border-top: 1px dashed #333; padding-top: 20px; }
-                    .btn-print { background: #00f2fe; padding: 15px; border: none; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 20px; cursor: pointer; }
-                    @media print { .btn-print { display: none; } }
-                </style>
-            </head>
-            <body>
-                <div class="ticket">
-                    <img src="assets/neon-logo.png" style="width: 140px;">
-                    <p style="color: #00f2fe; letter-spacing: 3px; font-size: 10px;">BLOOM EXPERIENCE</p>
-                    <h2>NEON PARTY</h2>
-                    <div class="qr-bg"><div id="qr-final"></div></div>
-                    <div class="info">
-                        <small style="color: #666;">CLIENTE</small>
-                        <p style="margin: 0 0 15px 0; font-weight: bold; font-size: 18px;">${datosTicket.nombre}</p>
-                        <small style="color: #666;">ENTRADA</small>
-                        <p style="margin: 0; font-weight: bold; color: #00f2fe;">${datosTicket.entrada} - S/ ${datosTicket.precio}</p>
-                        <small style="color: #666;">FECHA DEL EVENTO</small>
-                        <p class="value">02 DE MAYO 2026</p>
-                        
-                    <div class="actions">
-                        <button class="btn btn-download" onclick="window.print()">DESCARGAR</button>
-                        <a href="${urlWsp}" target="_blank" class="btn btn-whatsapp">MANDAR POR WHATSAPP</a>
-                    </div>
-                <script>
-                    new QRCode(document.getElementById("qr-final"), { text: "${datosTicket.codigo}", width: 200, height: 200 });
-                <\/script>
-            </body>
-            </html>
-        `);
-        ventanita.document.close();
-    }
-
     function enviarWhatsApp() {
         const msg = `¡Hola ${datosTicket.nombre}! Confirmamos tu entrada para Neon Party.%0A%0A*Tipo:* ${datosTicket.entrada}%0A*Fecha:* 02 de Mayo 2026.%0A%0APresenta el QR que te acabo de entregar.`;
         window.open(`https://wa.me/${datosTicket.whatsapp}?text=${msg}`, '_blank');
@@ -309,6 +266,71 @@ async function generarVenta() {
         document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotorLogueado.toUpperCase();
         await cargarPrecios();
     };
+
+function descargarPDF() {
+    if (!datosTicket) return alert("No hay datos del ticket.");
+
+    const ventanita = window.open('', '_blank');
+    if (!ventanita) return alert("Bloqueador de ventanas activado. Por favor permítelas.");
+
+    // Preparar WhatsApp
+    const num = datosTicket.whatsapp.replace(/\D/g, '');
+    const msg = `¡Hola ${datosTicket.nombre}! Entrada para *Neon Party*.%0A%0A*Tipo:* ${datosTicket.entrada}%0A*Fecha:* 02 de Mayo 2026`;
+    const url = `https://wa.me/${num}?text=${msg}`;
+
+    ventanita.document.write(`
+        <html>
+        <head>
+            <title>Ticket - ${datosTicket.nombre}</title>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+            <style>
+                body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+                .ticket { max-width: 320px; margin: auto; border: 1px solid #333; padding: 20px; border-radius: 20px; background: #050509; }
+                .qr-bg { background: #fff; padding: 10px; display: inline-block; border-radius: 10px; margin: 15px 0; }
+                .info { text-align: left; border-top: 1px dashed #333; padding-top: 15px; }
+                .label { color: #666; font-size: 10px; text-transform: uppercase; }
+                .value { margin: 0 0 10px 0; font-weight: bold; font-size: 14px; }
+                .actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+                .btn { padding: 15px; border-radius: 10px; font-weight: bold; text-decoration: none; text-align: center; text-transform: uppercase; font-size: 12px; border: none; cursor: pointer; }
+                .btn-pdf { background: #fff; color: #000; }
+                .btn-wsp { background: #25D366; color: #fff; }
+                @media print { .actions { display: none; } }
+            </style>
+        </head>
+        <body>
+            <div class="ticket">
+                <img src="assets/neon-logo.png" style="width: 100px; margin-bottom: 10px;">
+                <p style="color: #00f2fe; font-size: 9px; letter-spacing: 2px;">BLOOM EXPERIENCE</p>
+                
+                <div class="qr-bg"><div id="qr-final"></div></div>
+                
+                <div class="info">
+                    <span class="label">CLIENTE</span>
+                    <p class="value">${datosTicket.nombre}</p>
+                    <span class="label">ENTRADA</span>
+                    <p class="value" style="color:#00f2fe">${datosTicket.entrada}</p>
+                    <span class="label">FECHA</span>
+                    <p class="value">02 DE MAYO 2026</p>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-pdf" onclick="window.print()">📥 Descargar PDF</button>
+                    <a href="${url}" class="btn btn-wsp">💬 Enviar WhatsApp</a>
+                </div>
+            </div>
+            <script>
+                // El escape <\/script> evita que el editor de código se rompa
+                new QRCode(document.getElementById("qr-final"), {
+                    text: "${datosTicket.codigo}",
+                    width: 180,
+                    height: 180
+                });
+            <\/script>
+        </body>
+        </html>
+    `);
+    ventanita.document.close();
+}
 </script>
 </body>
 </html>
