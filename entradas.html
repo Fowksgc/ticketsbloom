@@ -7,8 +7,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
     :root {
@@ -303,43 +304,52 @@ async function generarVenta() {
 async function enviarTicketWhatsApp() {
     const { jsPDF } = window.jspdf;
     const elementoTicket = document.getElementById('ticket-area-pdf');
-    
-    if (!elementoTicket || !datosTicket) return alert("Error en datos");
+    const qrCanvas = document.querySelector('#qrcode canvas');
+    const qrImg = document.querySelector('#qrcode img');
+
+    if (!elementoTicket || !datosTicket) return alert("Error: Datos no encontrados");
+
+    // TRUCO: Si el QR es un Canvas, lo convertimos a imagen real temporalmente 
+    // para que html2canvas no lo ignore.
+    if (qrCanvas && !qrImg.src) {
+        qrImg.src = qrCanvas.toDataURL("image/png");
+        qrImg.style.display = "block";
+        qrCanvas.style.display = "none";
+    }
 
     try {
-        // 1. Convertimos el div en una imagen de alta calidad
+        // Esperamos un momento para que el navegador asimile el cambio visual
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         const canvas = await html2canvas(elementoTicket, {
-            scale: 3, // Triple resolución para que el QR sea perfecto
+            scale: 3, 
             backgroundColor: "#050509",
-            useCORS: true
+            useCORS: true,
+            allowTaint: true,
+            logging: false
         });
 
         const imgData = canvas.toDataURL('image/png');
 
-        // 2. Creamos el PDF con el tamaño exacto del ticket
-        // Ajustamos el formato al tamaño de tu ticket estilizado
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'px',
-            format: [canvas.width / 3, canvas.height / 3] // Dividimos entre el scale para volver al tamaño real
+            format: [canvas.width / 3, canvas.height / 3]
         });
 
-        // 3. Añadimos la imagen al PDF (sin bordes, sin URLs)
         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
 
-        // 4. Descarga automática con nombre personalizado
         const nombreArchivo = `TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
         pdf.save(nombreArchivo);
 
-        // 5. Abrir WhatsApp con el mensaje
         setTimeout(() => {
-            const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket descargado con éxito.*%0A%0A*Adjunta el archivo PDF que se acaba de descargar aquí abajo.* 👇`;
+            const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket PDF descargado.*%0A%0A*Adjúntalo aquí abajo.* 👇`;
             window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
-        }, 1000);
+        }, 1200);
 
     } catch (err) {
-        console.error(err);
-        alert("Error al generar el PDF");
+        console.error("Error al generar PDF:", err);
+        alert("Error al capturar el QR. Reintenta en un momento.");
     }
 }
 </script>
