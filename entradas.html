@@ -283,9 +283,13 @@ async function generarVenta() {
                         <p style="margin: 0 0 15px 0; font-weight: bold; font-size: 18px;">${datosTicket.nombre}</p>
                         <small style="color: #666;">ENTRADA</small>
                         <p style="margin: 0; font-weight: bold; color: #00f2fe;">${datosTicket.entrada} - S/ ${datosTicket.precio}</p>
+                        <small style="color: #666;">FECHA DEL EVENTO</small>
+                        <p class="value">02 DE MAYO 2026</p>
+                        
+                    <div class="actions">
+                        <button class="btn btn-download" onclick="window.print()">DESCARGAR</button>
+                        <a href="${urlWsp}" target="_blank" class="btn btn-whatsapp">MANDAR POR WHATSAPP</a>
                     </div>
-                    <button class="btn-print" onclick="window.print()">GUARDAR / IMPRIMIR</button>
-                </div>
                 <script>
                     new QRCode(document.getElementById("qr-final"), { text: "${datosTicket.codigo}", width: 200, height: 200 });
                 <\/script>
