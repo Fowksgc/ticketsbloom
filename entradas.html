@@ -297,99 +297,93 @@ function enviarTicketWhatsApp() {
         <head>
             <title>TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}</title>
             <style>
-                @page { margin: 0; size: auto; }
+                /* ELIMINAR URL Y ENCABEZADOS */
+                @page { 
+                    margin: 0 !important; 
+                    size: auto; 
+                }
                 
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    background: #000;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
                 body { 
-                    background: #000; 
-                    margin: 0; 
-                    padding: 0; 
                     display: flex; 
                     justify-content: center; 
-                    align-items: center; 
-                    min-height: 100vh;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                    -webkit-print-color-adjust: exact; 
+                    align-items: flex-start;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                }
+
+                /* Contenedor principal con margen interno para que no pegue al borde del PDF */
+                .wrapper-pdf {
+                    padding: 40px 20px;
+                    display: flex;
+                    justify-content: center;
+                    width: 100%;
                 }
 
                 .ticket-visual { 
-                    width: 400px; /* Un poco más ancho */
-                    border-radius: 30px; 
+                    width: 360px; 
+                    border-radius: 25px; 
                     border: 1px solid #222; 
                     background: #050509; 
-                    padding: 40px; 
+                    padding: 30px; 
                     text-align: center; 
                     color: #fff;
-                    /* ESCALADO: Aquí lo hacemos más grande para el PDF */
-                    transform: scale(1.2); 
-                    transform-origin: center;
+                    box-shadow: 0 0 30px rgba(0,0,0,1);
                 }
 
-                /* REFUERZO DE FUENTES Y ESTILOS */
-                h2 { font-size: 1.4rem; margin: 15px 0; text-transform: uppercase; letter-spacing: 1px; }
+                /* ESTILOS DE DATOS (REFORZADOS) */
+                h2 { font-size: 1.2rem; margin: 15px 0; text-transform: uppercase; color: #fff; }
                 
                 #qrcode { 
                     background: #fff; 
-                    padding: 15px; 
-                    border-radius: 15px; 
+                    padding: 12px; 
+                    border-radius: 12px; 
                     display: inline-block; 
-                    margin: 20px 0; 
+                    margin: 15px 0; 
                 }
                 #qrcode canvas, #qrcode img { 
-                    width: 200px !important; 
-                    height: 200px !important; 
+                    width: 180px !important; 
+                    height: 180px !important; 
                 }
 
                 .ticket-data { 
                     text-align: left; 
                     border-top: 1px dashed #333; 
-                    padding-top: 25px; 
-                    margin-top: 20px;
+                    padding-top: 20px; 
+                    margin-top: 15px;
                 }
 
-                .data-item { margin-bottom: 18px; text-align: left; }
-                
-                .data-label { 
-                    font-size: 10px; 
-                    color: #777; 
-                    display: block; 
-                    text-transform: uppercase; 
-                    letter-spacing: 1.5px;
-                    margin-bottom: 4px;
-                }
+                .data-item { margin-bottom: 15px; text-align: left; }
+                .data-label { font-size: 9px; color: #666; display: block; text-transform: uppercase; letter-spacing: 1px; }
+                .data-value { font-size: 16px; font-weight: bold; text-transform: uppercase; color: #fff; display: block; }
 
-                .data-value { 
-                    font-size: 18px; 
-                    font-weight: bold; 
-                    text-transform: uppercase; 
-                    color: #fff; 
-                    display: block;
-                }
-
-                /* Color Cyan para el Promotor y la Entrada */
-                #res-promotor, #res-tipo {
-                    color: #00f2fe !important;
-                }
+                #res-promotor, #res-tipo { color: #00f2fe !important; }
 
                 .ticket-disclaimer { 
-                    margin-top: 25px; 
+                    margin-top: 20px; 
                     padding-top: 15px; 
                     border-top: 1px solid #222; 
-                    font-size: 11px; 
+                    font-size: 10px; 
                     color: #555; 
                     text-align: justify; 
                     line-height: 1.4; 
                 }
 
-                .logo-subtle-container img {
-                    width: 90px; height: auto; opacity: 0.7; mix-blend-mode: screen;
-                }
-                
-                p { font-size: 11px; color: #333; margin-top: 15px; }
+                .logo-subtle-container img { width: 80px; height: auto; opacity: 0.7; mix-blend-mode: screen; }
+                p.footer-copy { font-size: 10px; color: #333; margin-top: 15px; text-align: center; }
             </style>
         </head>
-        <body onload="setTimeout(() => { window.print(); window.close(); }, 500);">
-            <div class="ticket-visual">
-                ${contenidoHTML}
+        <body onload="setTimeout(() => { window.print(); window.close(); }, 700);">
+            <div class="wrapper-pdf">
+                <div class="ticket-visual">
+                    ${contenidoHTML}
+                </div>
             </div>
         </body>
         </html>
@@ -401,7 +395,7 @@ function enviarTicketWhatsApp() {
     setTimeout(() => {
         const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A📌 *Detalles:*%0A- Tipo: ${datosTicket.entrada}%0A- Fecha: 02 de Mayo 2026%0A%0A*Adjunto tu ticket en PDF abajo.* 👇`;
         window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
-    }, 2000);
+    }, 2500);
 }
 </script>
 </body>
