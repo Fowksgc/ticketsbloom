@@ -230,6 +230,7 @@ async function generarVenta() {
         // 4. Llenar la interfaz visual del Paso 3
         document.getElementById('res-nombre').innerText = nombre;
         document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+        document.getElementById('res-fecha').innerText = "02 DE MAYO 2026";
         
         // Asegurar que la fecha aparezca en la pantalla (Paso 3)
         const resFecha = document.getElementById('res-fecha');
