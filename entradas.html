@@ -144,29 +144,22 @@
     </div>
 
     <div id="step-3" class="step">
-        <div id="ticket-visual" class="ticket-visual" style="background-color: #000000; color: #ffffff; padding: 30px; border: 1px solid #222; border-radius: 0px; text-align: center; width: 320px; margin: 0 auto; font-family: sans-serif;">
-            
-            <p style="color: #00f2fe; font-size: 10px; letter-spacing: 4px; margin: 0; text-transform: uppercase;">BLOOM EXPERIENCE</p>
-            <h2 style="font-size: 22px; font-weight: 900; margin: 10px 0 20px 0; text-transform: uppercase;">¡TICKET GENERADO!</h2>
-            
-            <div style="background: #ffffff; padding: 12px; border-radius: 10px; display: inline-block; margin-bottom: 20px;">
-                <div id="qrcode"></div>
-            </div>
-        
-            <div style="text-align: left; border-top: 1px dashed #333; padding-top: 20px;">
-                <div style="margin-bottom: 15px;">
-                    <span style="font-size: 9px; color: #666; letter-spacing: 1px; display: block; margin-bottom: 2px;">NOMBRE DEL CLIENTE</span>
-                    <span id="res-nombre" style="font-size: 15px; font-weight: bold; text-transform: uppercase; display: block;">-</span>
+        <div id="ticket-visual" class="ticket-visual">
+            <p class="ticket-title">BLOOM EXPERIENCE</p>
+            <h2 class="ticket-event">¡TICKET GENERADO!</h2>
+            <div id="qrcode"></div>
+            <div class="ticket-data">
+                <div class="data-item">
+                    <span class="data-label">NOMBRE DEL CLIENTE</span>
+                    <span id="res-nombre" class="data-value">-</span>
                 </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <span style="font-size: 9px; color: #666; letter-spacing: 1px; display: block; margin-bottom: 2px;">ENTRADA / PRECIO</span>
-                    <span id="res-tipo" style="font-size: 15px; font-weight: bold; text-transform: uppercase; display: block; color: #00f2fe;">-</span>
+                <div class="data-item">
+                    <span class="data-label">ENTRADA / PRECIO</span>
+                    <span id="res-tipo" class="data-value data-accent">-</span>
                 </div>
-                
-                <div>
-                    <span style="font-size: 9px; color: #666; letter-spacing: 1px; display: block; margin-bottom: 2px;">FECHA DEL EVENTO</span>
-                    <span style="font-size: 15px; font-weight: bold; text-transform: uppercase; display: block;">02 DE MAYO 2026</span>
+                <div class="data-item">
+                    <span class="data-label">FECHA DEL EVENTO</span>
+                    <span class="data-value">02 DE MAYO 2026</span>
                 </div>
             </div>
         </div>
