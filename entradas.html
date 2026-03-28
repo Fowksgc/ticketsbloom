@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Neon Party - Generar Ticket</title>
-  
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  
+
   <style>
     :root {
       --bg: #050509; --card: #10101e; --accent: #00f2fe; --border: #1f1f33; --text: #ffffff; --input-bg: #080812;
@@ -98,7 +98,7 @@
     }
     .ticket-title { color: var(--accent); font-size: 10px; letter-spacing: 4px; margin: 0; }
     .ticket-event { font-size: 1.4rem; font-weight: 900; margin: 5px 0 20px 0; }
-    
+
     #qrcode { background: white; padding: 12px; border-radius: 15px; display: inline-block; margin-bottom: 20px; }
     #qrcode img { display: block; }
 
@@ -124,7 +124,7 @@
         <label>Selecciona Tipo de Entrada</label>
         <div id="grid-precios" class="grid-precios"></div>
     </div>
-  
+
     <div id="step-box" class="step">
         <label>Mapa del Evento - NEON PARTY</label>
         <div class="mapa-container" style="width: 100%; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 1px solid var(--border);">
@@ -134,7 +134,7 @@
         <div class="grid-boxes" id="grid-boxes"></div>
         <button class="btn-back" onclick="irAPaso(1)">← Volver a entradas</button>
     </div>
-  
+
     <div id="step-2" class="step">
         <label id="label-seleccionada" style="color: #fff; background: rgba(0,242,254,0.1); padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 20px; border: 1px dashed var(--accent);"></label>
         <input type="text" id="nombre-cliente" placeholder="Nombre completo">
@@ -168,7 +168,7 @@
         <button class="btn-back" onclick="window.location.replace(window.location.href)"> + Nueva Venta</button>
     </div>
 </div>
-  
+
 </div>
 
 <script>
@@ -184,7 +184,7 @@
 
     document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotorLogueado.toUpperCase();
 
-  
+
 
     async function cargarPrecios() {
         const grid = document.getElementById('grid-precios');
@@ -269,111 +269,108 @@ async function generarVenta() {
             await _supabase.from('boxes').update({ estado: 'ocupado' }).eq('numero_box', boxSeleccionado);
         }
 
-        // 3. GUARDAR DATOS GLOBALES: Esto es vital para que descargarPDF() sepa qué escribir
-        datosTicket = { 
-            nombre: nombre, 
-            codigo: codigoNuevo, 
-            whatsapp: whatsapp, 
-            entrada: tipoFinal, 
-            precio: precioSeleccionado 
-        };
+        // 3. Guardar datos en la variable global para el PDF
+        datosTicket = { nombre, codigo: codigoNuevo, whatsapp, entrada: tipoFinal, precio: precioSeleccionado };
 
-        // 4. Llenar la Interfaz que ve el promotor (Paso 3)
-        const resNombre = document.getElementById('res-nombre');
-        const resTipo = document.getElementById('res-tipo');
-        
-        if(resNombre) resNombre.innerText = nombre;
-        if(resTipo) resTipo.innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
 
-        // 5. Cambiar al paso de "Ticket Generado"
+
+
+
+
+
+        // 4. Llenar Interfaz Visual (Paso 3)
+        document.getElementById('res-nombre').innerText = nombre;
+        document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+
+        // 5. Llenar Template del PDF (El que creamos al final del body)
+        document.getElementById('pdf-nombre').innerText = nombre;
+        document.getElementById('pdf-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+
+        // 6. Cambiar de paso
         irAPaso(3);
 
-        // 6. Generar QR para la Pantalla del celular (Paso 3)
+        // 7. Generar QR para la Pantalla (Celular)
         const qrContainer = document.getElementById("qrcode");
-        if (qrContainer) {
-            qrContainer.innerHTML = "";
-            new QRCode(qrContainer, { 
-                text: codigoNuevo, 
-                width: 160, 
-                height: 160, 
-                correctLevel: QRCode.CorrectLevel.H 
-            });
-        }
-        
-        // NOTA: El QR para el PDF ya no se genera aquí, 
-        // se genera automáticamente dentro de la función descargarPDF()
+        qrContainer.innerHTML = "";
+        new QRCode(qrContainer, { 
+            text: codigoNuevo, 
+            width: 160, 
+            height: 160, 
+            correctLevel: QRCode.CorrectLevel.H 
+        });
+
+        // 8. Generar QR para el PDF (Oculto)
+        const qrPDF = document.getElementById("qrcode-pdf");
+        qrPDF.innerHTML = "";
+        new QRCode(qrPDF, { 
+            text: codigoNuevo, 
+            width: 200, // Un poco más grande para mejor calidad en PDF
+            height: 200, 
+            correctLevel: QRCode.CorrectLevel.H 
+        });
     }
 }
 
-function descargarPDF() {
-    // Abrimos la nueva pestaña
-    const ventanita = window.open('', '_blank');
-    
-    // Construimos el HTML del ticket para la nueva pestaña
-    ventanita.document.write(`
-        <html>
-        <head>
-            <title>Ticket - ${datosTicket.nombre}</title>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-            <style>
-                body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-                .ticket-container { 
-                    max-width: 350px; margin: 0 auto; border: 2px solid #1a1a1a; 
-                    padding: 30px; border-radius: 20px; background: #000;
-                }
-                .logo { color: #00f2fe; letter-spacing: 4px; font-weight: bold; margin-bottom: 20px; }
-                .qr-box { background: #fff; padding: 15px; display: inline-block; border-radius: 12px; margin: 20px 0; }
-                .info { text-align: left; border-top: 1px dashed #333; margin-top: 20px; padding-top: 20px; }
-                .label { font-size: 10px; color: #666; text-transform: uppercase; }
-                .val { font-size: 18px; font-weight: bold; display: block; margin-bottom: 15px; }
-                .btn-group { margin-top: 30px; display: flex; flex-direction: column; gap: 10px; }
-                .btn { 
-                    padding: 15px; border: none; border-radius: 10px; font-weight: bold; 
-                    cursor: pointer; text-decoration: none; font-size: 14px;
-                }
-                .btn-pdf { background: #00f2fe; color: #000; }
-                .btn-wsp { background: #25d366; color: #fff; }
-                @media print { .btn-group { display: none; } }
-            </style>
-        </head>
-        <body>
-            <div class="ticket-container" id="ticket">
-                <div class="logo">BLOOM EXPERIENCE</div>
-                <img src="assets/logo1.png" style="width:120px; margin-bottom:10px;">
-                <h2 style="margin:0;">NEON PARTY</h2>
-                
-                <div class="qr-box"><div id="qrcode-final"></div></div>
+async function descargarPDF() {
+    // 1. Definimos la ruta exacta (CUIDADO con las mayúsculas)
+    const rutaLogo = "assets/neon-logo.png"; 
 
-                <div class="info">
-                    <span class="label">Propietario</span>
-                    <span class="val">${datosTicket.nombre}</span>
-                    <span class="label">Entrada</span>
-                    <span class="val" style="color:#00f2fe;">${datosTicket.entrada}</span>
-                    <span class="label">Fecha</span>
-                    <span class="val">02 DE MAYO 2026</span>
-                </div>
+    const tempContainer = document.createElement('div');
+    // ... estilos del contenedor ...
 
-                <div class="btn-group">
-                    <button onclick="window.print()" class="btn btn-pdf">Descargar / Imprimir PDF</button>
-                    <a href="https://wa.me/${datosTicket.whatsapp}?text=Hola ${datosTicket.nombre}, aquí tienes tu ticket para la Neon Party: ${window.location.href}" 
-                       target="_blank" class="btn btn-wsp">Compartir por WhatsApp</a>
-                </div>
+    tempContainer.innerHTML = `
+        <div style="padding: 40px; background-color: #000; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <img id="pdf-logo-img" src="${rutaLogo}" crossorigin="anonymous" style="width: 140px; height: auto;">
+            </div>
+            
+            <h1 style="color: #fff; font-size: 22px;">¡GRACIAS POR TU COMPRA!</h1>
+            
+            <div style="background: #fff; padding: 15px; display: inline-block; margin: 20px 0; border-radius: 10px;">
+                <div id="qrcode-pdf-temp"></div>
             </div>
 
-            <script>
-                // Generar el QR una vez que la pestaña carga
-                new QRCode(document.getElementById("qrcode-final"), {
-                    text: "${datosTicket.codigo}",
-                    width: 180,
-                    height: 180,
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            </script>
-        </body>
-        </html>
-    `);
-    
-    ventanita.document.close();
+            <div style="text-align: left; color: #fff; border-top: 1px dashed #333; padding-top: 20px;">
+                <p style="font-size: 14px;"><b>CLIENTE:</b> ${datosTicket.nombre}</p>
+                <p style="font-size: 14px;"><b>ENTRADA:</b> ${datosTicket.entrada}</p>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(tempContainer);
+
+    // 2. Generar el QR
+    new QRCode(document.getElementById("qrcode-pdf-temp"), {
+        text: datosTicket.codigo,
+        width: 180,
+        height: 180
+    });
+
+    // 3. ESPERAR A QUE LA IMAGEN CARGUE ANTES DE DISPARAR EL PDF
+    const img = document.getElementById('pdf-logo-img');
+
+    const ejecutarDescarga = async () => {
+        const opciones = {
+            margin: 0,
+            filename: `Ticket_Bloom_${datosTicket.nombre}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#000000' },
+            jsPDF: { unit: 'mm', format: [105, 180], orientation: 'portrait' }
+        };
+
+        await html2pdf().set(opciones).from(tempContainer).save();
+        document.body.removeChild(tempContainer);
+    };
+
+    if (img.complete) {
+        setTimeout(ejecutarDescarga, 600);
+    } else {
+        img.onload = () => setTimeout(ejecutarDescarga, 600);
+        img.onerror = () => {
+            console.error("No se pudo cargar el logo, generando sin imagen...");
+            ejecutarDescarga();
+        };
+    }
 }
 
     function enviarWhatsApp() {
