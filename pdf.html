@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Digital - Neon Party</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root { --accent: #00f2fe; }
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        
+        #loader { font-size: 12px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
+        .ticket-box { max-width: 360px; width: 100%; background: #050509; border: 1px solid #1f1f33; border-radius: 30px; padding: 30px; text-align: center; display: none; box-shadow: 0 0 40px rgba(0, 242, 254, 0.05); }
+        .qr-white-bg { background: #fff; padding: 15px; display: inline-block; border-radius: 20px; margin: 20px 0; }
+        .info-grid { text-align: left; border-top: 1px dashed #222; padding-top: 20px; margin-top: 10px; }
+        .label { color: #555; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .value { margin: 0 0 15px 0; font-weight: bold; font-size: 16px; text-transform: uppercase; }
+        
+        .actions { margin-top: 30px; display: flex; flex-direction: column; gap: 10px; }
+        .btn { padding: 18px; border-radius: 15px; font-weight: bold; text-decoration: none; font-size: 13px; text-transform: uppercase; cursor: pointer; border: none; }
+        .btn-pdf { background: #fff; color: #000; }
+        .btn-wsp { background: #25D366; color: #fff; }
+
+        @media print { .actions { display: none; } body { padding: 0; } .ticket-box { border: none; box-shadow: none; } }
+    </style>
+</head>
+<body>
+
+    <div id="loader">Validando Ticket Seguro...</div>
+
+    <div class="ticket-box" id="ticket-ui">
+        <img src="assets/neon-logo.png" style="width: 120px; margin-bottom: 5px;">
+        <p style="color: var(--accent); font-size: 10px; letter-spacing: 4px; margin: 0;">BLOOM EXPERIENCE</p>
+        
+        <div class="qr-white-bg">
+            <div id="qrcode"></div>
+        </div>
+
+        <div class="info-grid">
+            <span class="label">Asistente</span>
+            <p id="txt-nombre" class="value">-</p>
+            <span class="label">Tipo de Acceso</span>
+            <p id="txt-tipo" class="value" style="color: var(--accent);">-</p>
+            <span class="label">Fecha del Evento</span>
+            <p class="value">02 DE MAYO 2026</p>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-pdf" onclick="window.print()">📥 Guardar Ticket</button>
+            <a id="lnk-wsp" href="#" target="_blank" class="btn btn-wsp">💬 Enviar por WhatsApp</a>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://nakrilawyrppxvjnrbks.supabase.co/';
+        const SUPABASE_KEY = 'sb_publishable_JJGnQbTeKrQ8m02e76pZpg_nJ9lGp0m';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function validarYMostrar() {
+            const params = new URLSearchParams(window.location.search);
+            const idTicket = params.get('id');
+
+            if (!idTicket) {
+                document.getElementById('loader').innerText = "Acceso Denegado";
+                return;
+            }
+
+            const { data, error } = await _supabase
+                .from('tickets')
+                .select('*')
+                .eq('codigo_qr', idTicket)
+                .single();
+
+            if (error || !data) {
+                document.getElementById('loader').innerText = "Ticket no encontrado";
+                return;
+            }
+
+            // Llenar UI
+            document.getElementById('txt-nombre').innerText = data.nombre_cliente;
+            document.getElementById('txt-tipo').innerText = data.tipo_entrada;
+            
+            // QR
+            new QRCode(document.getElementById("qrcode"), { 
+                text: data.codigo_qr, 
+                width: 200, height: 200, 
+                correctLevel: QRCode.CorrectLevel.H 
+            });
+
+            // WhatsApp Link
+            const mensaje = `¡Hola ${data.nombre_cliente}! Aquí tienes tu ticket para *Neon Party*. Descárgalo aquí: ${window.location.href}`;
+            document.getElementById('lnk-wsp').href = `https://wa.me/${data.whatsapp}?text=${encodeURIComponent(mensaje)}`;
+
+            // Mostrar Ticket
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('ticket-ui').style.display = 'block';
+        }
+
+        window.onload = validarYMostrar;
+    </script>
+</body>
+</html>
