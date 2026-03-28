@@ -215,7 +215,7 @@
         const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let aleatorio = '';
         for (let i = 0; i < 10; i++) aleatorio += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-        return `ZNT-${Date.now().toString(36).toUpperCase()}-${aleatorio}`;
+        return `NP-${Date.now().toString(36).toUpperCase()}-${aleatorio}`;
     }
 
     window.onload = cargarPrecios;
