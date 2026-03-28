@@ -116,7 +116,7 @@
 
 <div class="container">
     <div class="logo-fest-container">
-        <img src="https://lh3.googleusercontent.com/d/1UgBxK65cJIA_iE7YSh5vFwsxSP03STke" alt="Logo">
+        <img src="assets/neon-logo.png" alt="Logo">
     </div>
     <div class="subtitle" id="promotor-tag">PROMOTOR: CARGANDO...</div>
 
@@ -128,7 +128,7 @@
     <div id="step-box" class="step">
         <label>Mapa del Evento - NEON PARTY</label>
         <div class="mapa-container" style="width: 100%; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 1px solid var(--border);">
-            <img src="https://lh3.googleusercontent.com/d/1UgBxK65cJIA_iE7YSh5vFwsxSP03STke" alt="Mapa Boxes" style="width: 100%; display: block;">
+            <img src="assets/logo1.png" alt="Mapa Boxes" style="width: 100%; display: block;">
         </div>
         <label>Selecciona un Box Disponible</label>
         <div class="grid-boxes" id="grid-boxes"></div>
@@ -306,25 +306,65 @@ async function generarVenta() {
 }
 
 async function descargarPDF() {
-    const elemento = document.getElementById('ticket-pdf-template');
+    // 1. Definimos la ruta exacta (CUIDADO con las mayúsculas)
+    const rutaLogo = "assets/neon-logo.png"; 
+
+    const tempContainer = document.createElement('div');
+    // ... estilos del contenedor ...
+
+    tempContainer.innerHTML = `
+        <div style="padding: 40px; background-color: #000; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <img id="pdf-logo-img" src="${rutaLogo}" crossorigin="anonymous" style="width: 140px; height: auto;">
+            </div>
+            
+            <h1 style="color: #fff; font-size: 22px;">¡GRACIAS POR TU COMPRA!</h1>
+            
+            <div style="background: #fff; padding: 15px; display: inline-block; margin: 20px 0; border-radius: 10px;">
+                <div id="qrcode-pdf-temp"></div>
+            </div>
+
+            <div style="text-align: left; color: #fff; border-top: 1px dashed #333; padding-top: 20px;">
+                <p style="font-size: 14px;"><b>CLIENTE:</b> ${datosTicket.nombre}</p>
+                <p style="font-size: 14px;"><b>ENTRADA:</b> ${datosTicket.entrada}</p>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(tempContainer);
+
+    // 2. Generar el QR
+    new QRCode(document.getElementById("qrcode-pdf-temp"), {
+        text: datosTicket.codigo,
+        width: 180,
+        height: 180
+    });
+
+    // 3. ESPERAR A QUE LA IMAGEN CARGUE ANTES DE DISPARAR EL PDF
+    const img = document.getElementById('pdf-logo-img');
     
-    const opciones = {
-        margin: 0,
-        filename: `Ticket_Bloom_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { 
-            scale: 3, 
-            useCORS: true, 
-            backgroundColor: '#000000',
-            width: 400
-        },
-        jsPDF: { unit: 'mm', format: [105, 185], orientation: 'portrait' } 
+    const ejecutarDescarga = async () => {
+        const opciones = {
+            margin: 0,
+            filename: `Ticket_Bloom_${datosTicket.nombre}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#000000' },
+            jsPDF: { unit: 'mm', format: [105, 180], orientation: 'portrait' }
+        };
+
+        await html2pdf().set(opciones).from(tempContainer).save();
+        document.body.removeChild(tempContainer);
     };
 
-    // Damos 500ms para asegurar que el logo y el QR estén listos
-    setTimeout(() => {
-        html2pdf().set(opciones).from(elemento).save();
-    }, 500);
+    if (img.complete) {
+        setTimeout(ejecutarDescarga, 600);
+    } else {
+        img.onload = () => setTimeout(ejecutarDescarga, 600);
+        img.onerror = () => {
+            console.error("No se pudo cargar el logo, generando sin imagen...");
+            ejecutarDescarga();
+        };
+    }
 }
 
     function enviarWhatsApp() {
