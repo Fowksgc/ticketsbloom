@@ -162,12 +162,11 @@
 
         if(!nombre || !whatsapp) return alert("Completa todos los datos");
 
-        const codigoUnico = Math.random().toString(36).substr(2, 6).toUpperCase();
-        const textoParaQR = `${nombre}|${codigoUnico}`;
+        const codigoNuevo = generarCodigoSeguro();
 
         // INSERTAR Y CAPTURAR DATA
         const { data, error } = await _supabase.from('tickets').insert([{
-            codigo_qr: textoParaQR,
+            codigo_qr: codigoNuevo,
             nombre_cliente: nombre,
             whatsapp: whatsapp,
             tipo_entrada: entradaSeleccionada,
@@ -217,6 +216,21 @@
     }
 
     window.onload = cargarPrecios;
+
+  // Función para generar un código único y largo
+function generarCodigoSeguro() {
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let aleatorio = '';
+    for (let i = 0; i < 12; i++) {
+        aleatorio += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    // Formato: MARCA-FECHA-ALEATORIO (Imposible de adivinar)
+    const prefijo = "NP"; // Por tu marca Zento
+    const timestamp = Date.now().toString(36).toUpperCase(); 
+    return `${prefijo}-${timestamp}-${aleatorio}`;
+}
+
+
 </script>
 
 </body>
