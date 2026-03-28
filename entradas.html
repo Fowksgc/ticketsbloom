@@ -260,7 +260,7 @@ async function generarVenta() {
         fecha_venta:fecha_venta,
         usado: false
     }]).select();
-  try {
+try {
         const { data, error } = await _supabase
             .from('tickets')
             .insert([datosVenta])
@@ -275,7 +275,6 @@ async function generarVenta() {
         console.error("Error:", error.message);
         alert("Error al guardar: " + error.message);
     }
-}
 
     if (error) return alert("Error al guardar venta en la base de datos.");
 
