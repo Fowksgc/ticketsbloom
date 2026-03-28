@@ -165,7 +165,7 @@
         </div>
         <button class="btn-main" style="background: #ffffff; color: #000; margin-bottom: 10px;" onclick="descargarPDF()">Descargar PDF 📄</button>
         <button class="btn-main" style="background: #25D366; color: white;" onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
-        <button class="btn-back" onclick="location.reload()">+ Nueva Venta</button>
+        <button class="btn-back" onclick="window.location.replace(window.location.href)"> + Nueva Venta</button>
     </div>
 </div>
 
@@ -181,6 +181,8 @@
     const promotorLogueado = localStorage.getItem('promotor_activo') || "Invitado";
 
     document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotorLogueado.toUpperCase();
+
+  
 
     async function cargarPrecios() {
         const grid = document.getElementById('grid-precios');
@@ -299,7 +301,27 @@
         return `NP-${Date.now().toString(36).toUpperCase()}-${aleatorio}`;
     }
 
-    window.onload = cargarPrecios;
+    // 1. Bloqueo de seguridad al cargar la página
+window.onload = async () => {
+    // Si no hay promotor, mandarlo al login de inmediato
+    if (!localStorage.getItem('promotor_activo')) {
+        window.location.replace('index.html'); 
+        return;
+    }
+
+    // Actualizamos el nombre del promotor en la interfaz
+    const promotor = localStorage.getItem('promotor_activo');
+    document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotor.toUpperCase();
+
+    // BLOQUEO DEL BOTÓN ATRÁS (Evita volver al login trabado)
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function() {
+        window.history.pushState(null, null, window.location.href);
+    };
+
+    // Llamamos a cargar los precios
+    await cargarPrecios();
+};
 </script>
 </body>
 </html>
