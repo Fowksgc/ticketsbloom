@@ -247,7 +247,8 @@
         if(!nombre || !whatsapp) return alert("Completa los datos");
 
         const codigoNuevo = generarCodigoSeguro();
-        const tipoFinal = boxSeleccionado ? `${entradaSeleccionada} (BOX ${boxSeleccionado})` : entradaSeleccionada;
+        // Si hay box seleccionado, el nombre será solo "BOX X". Si no, el nombre de la entrada normal.
+        const tipoFinal = boxSeleccionado ? `BOX ${boxSeleccionado}` : entradaSeleccionada;
 
         const { data, error } = await _supabase.from('tickets').insert([{
             codigo_qr: codigoNuevo,
