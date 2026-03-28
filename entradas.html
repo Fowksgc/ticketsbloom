@@ -96,8 +96,8 @@
 
     <div id="step-3" class="step">
         <div id="ticket-visual" class="ticket-visual">
-            <p class="ticket-title">TICKET GENERADO</p>
-            <h2 class="ticket-event">ZENTO EVENT</h2>
+            <p class="ticket-title">Bloom Experience</p>
+            <h2 class="ticket-event">¡TICKET GENERADO!</h2>
             
             <div id="qrcode"></div>
 
@@ -207,7 +207,7 @@
     }
 
     function enviarWhatsApp() {
-        const mensaje = `¡Hola ${datosTicket.nombre}! Confirmo tu entrada para ZENTO.%0A%0A*Tipo:* ${datosTicket.entrada}%0A*Fecha:* 02 de Mayo 2026%0A%0APresenta el QR que te acabo de enviar.`;
+        const mensaje = `¡Hola ${datosTicket.nombre}! Confirmo tu entrada para Neon Party.%0A%0A*Tipo:* ${datosTicket.entrada}%0A*Fecha:* 02 de Mayo 2026%0A%0APresenta el QR que te acabo de enviar.`;
         window.open(`https://wa.me/${datosTicket.whatsapp.replace(/\D/g,'')}?text=${mensaje}`, '_blank');
     }
 
