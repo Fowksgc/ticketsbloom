@@ -64,7 +64,7 @@
     .btn-box.ocupado { background: #222; border-color: #444; color: #444; cursor: not-allowed; opacity: 0.5; }
 
     .ticket-visual { background: #000; border: 1px solid #222; border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px; }
-    #qrcode { background: white; padding: 12px; border-radius: 15px; display: inline-block; margin-bottom: 20px; min-height: 160px; }
+    #qrcode { background: white; padding: 12px; border-radius: 15px; display: inline-block; margin-bottom: 20px; }
 
     .ticket-data { text-align: left; border-top: 1px dashed #333; padding-top: 20px; }
     .data-item { margin-bottom: 15px; }
@@ -117,10 +117,10 @@
                     <span class="data-label">ENTRADA</span>
                     <span id="res-tipo" class="data-value" style="color: var(--accent);">-</span>
                 </div>
-                <div class="data-item">
+              <div class="data-item">
                     <span class="data-label">FECHA DEL EVENTO</span>
                     <span id="res-fecha" class="data-value">02 DE MAYO 2026</span>
-                </div>
+            </div>
             </div>
         </div>
         <button class="btn-main" style="background: #fff; color: #000; margin-bottom: 10px;" onclick="descargarPDF()">COMPARTIR TICKET</button>
@@ -190,123 +190,119 @@
         });
     }
 
-    async function generarVenta() {
-        const nombre = document.getElementById('nombre-cliente').value.trim().toUpperCase();
-        const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
+async function generarVenta() {
+    const nombre = document.getElementById('nombre-cliente').value.trim().toUpperCase();
+    const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
 
-        if (!nombre || !whatsapp) return alert("Completa los datos del cliente");
+    if (!nombre || !whatsapp) return alert("Completa los datos del cliente");
 
-        const codigoNuevo = `NP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-        const tipoFinal = boxSeleccionado ? `BOX ${boxSeleccionado}` : entradaSeleccionada;
+    // Generar código único para el ticket
+    const codigoNuevo = `NP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+    const tipoFinal = boxSeleccionado ? `BOX ${boxSeleccionado}` : entradaSeleccionada;
 
-        const { data, error } = await _supabase.from('tickets').insert([{
-            codigo_qr: codigoNuevo,
-            nombre_cliente: nombre,
-            whatsapp: whatsapp,
-            tipo_entrada: tipoFinal,
-            promotor: promotorLogueado,
-            usado: false
-        }]).select();
+    // 1. Guardar en Supabase
+    const { data, error } = await _supabase.from('tickets').insert([{
+        codigo_qr: codigoNuevo,
+        nombre_cliente: nombre,
+        whatsapp: whatsapp,
+        tipo_entrada: tipoFinal,
+        promotor: promotorLogueado,
+        usado: false
+    }]).select();
 
-        if (error) return alert("Error al guardar venta.");
+    if (error) return alert("Error al guardar venta en la base de datos.");
 
-        if (data) {
-            if (boxSeleccionado) {
-                await _supabase.from('boxes').update({ estado: 'ocupado' }).eq('numero_box', boxSeleccionado);
-            }
-
-            datosTicket = { 
-                nombre: nombre, 
-                codigo: codigoNuevo, 
-                whatsapp: whatsapp, 
-                entrada: tipoFinal, 
-                precio: precioSeleccionado 
-            };
-
-            document.getElementById('res-nombre').innerText = nombre;
-            document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
-            document.getElementById('res-fecha').innerText = "02 DE MAYO 2026";
-
-            irAPaso(3);
-
-            setTimeout(() => {
-                const qrContainer = document.getElementById("qrcode");
-                if (qrContainer) {
-                    qrContainer.innerHTML = "";
-                    new QRCode(qrContainer, { 
-                        text: codigoNuevo, 
-                        width: 160, 
-                        height: 160,
-                        correctLevel: QRCode.CorrectLevel.H 
-                    });
-                }
-            }, 300);
+    if (data) {
+        // 2. Bloquear el Box si aplica
+        if (boxSeleccionado) {
+            await _supabase.from('boxes').update({ estado: 'ocupado' }).eq('numero_box', boxSeleccionado);
         }
+
+        // 3. Guardar datos en la variable global para que descargarPDF() los encuentre
+        datosTicket = { 
+            nombre: nombre, 
+            codigo: codigoNuevo, 
+            whatsapp: whatsapp, 
+            entrada: tipoFinal, 
+            precio: precioSeleccionado 
+        };
+
+        // 4. Llenar la interfaz visual del Paso 3
+        document.getElementById('res-nombre').innerText = nombre;
+        document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+
+
+        // Asegurar que la fecha aparezca en la pantalla (Paso 3)
+        const resFecha = document.getElementById('res-fecha');
+        if (resFecha) {
+            resFecha.innerText = "02 DE MAYO 2026";
+        }
+
+        // 5. Cambiar al paso del ticket generado
+        irAPaso(3);
+
+        // 6. Generar el QR con un pequeño retraso para asegurar que el div sea visible
+        setTimeout(() => {
+            const qrContainer = document.getElementById("qrcode");
+            if (qrContainer) {
+                qrContainer.innerHTML = ""; // Limpiar rastro anterior
+                new QRCode(qrContainer, { 
+                    text: codigoNuevo, 
+                    width: 160, 
+                    height: 160,
+                    correctLevel: QRCode.CorrectLevel.H 
+                });
+            }
+        }, 300); // 300ms de margen para el renderizado
     }
+}
 
     function descargarPDF() {
-        if (!datosTicket) return alert("No hay datos del ticket.");
-
         const ventanita = window.open('', '_blank');
-        const num = datosTicket.whatsapp.replace(/\D/g, '');
-        const msgWsp = `¡Hola ${datosTicket.nombre}! Confirmo tu entrada para *Neon Party*.%0A%0A*Tipo:* ${datosTicket.entrada}%0A*Fecha:* 02 de Mayo 2026%0A%0APresenta el QR adjunto para ingresar.`;
-        const urlWsp = `https://wa.me/${num}?text=${msgWsp}`;
-
         ventanita.document.write(`
             <html>
             <head>
                 <title>Ticket Bloom - ${datosTicket.nombre}</title>
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
                 <style>
-                    body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; margin: 0; }
-                    .ticket { max-width: 340px; margin: 20px auto; border: 1px solid #222; padding: 25px; border-radius: 25px; background: #050509; }
-                    .qr-bg { background: #fff; padding: 15px; display: inline-block; border-radius: 15px; margin: 15px 0; }
+                    body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 40px; }
+                    .ticket { max-width: 350px; margin: 0 auto; border: 1px solid #222; padding: 30px; border-radius: 20px; }
+                    .qr-bg { background: #fff; padding: 15px; display: inline-block; border-radius: 10px; margin: 20px 0; }
                     .info { text-align: left; border-top: 1px dashed #333; padding-top: 20px; }
-                    .label { color: #666; font-size: 9px; text-transform: uppercase; display: block; margin-bottom: 2px; }
-                    .value { margin: 0 0 15px 0; font-weight: bold; font-size: 16px; color: #fff; }
-                    .accent { color: #00f2fe; }
-                    .actions { margin-top: 25px; display: flex; flex-direction: column; gap: 12px; }
-                    .btn { 
-                        padding: 16px; border: none; border-radius: 12px; font-weight: bold; 
-                        cursor: pointer; font-size: 13px; text-transform: uppercase; text-decoration: none;
-                        display: block; transition: 0.2s;
-                    }
-                    .btn-download { background: #fff; color: #000; }
-                    .btn-whatsapp { background: #25D366; color: #fff; }
-                    @media print { .actions { display: none; } }
+                    .btn-print { background: #00f2fe; padding: 15px; border: none; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 20px; cursor: pointer; }
+                    @media print { .btn-print { display: none; } }
                 </style>
             </head>
             <body>
                 <div class="ticket">
-                    <img src="assets/neon-logo.png" style="width: 120px; margin-bottom: 10px;">
-                    <p style="color: #00f2fe; letter-spacing: 3px; font-size: 9px; margin: 0;">BLOOM EXPERIENCE</p>
-                    <h2 style="margin: 5px 0;">NEON PARTY</h2>
+                    <img src="assets/neon-logo.png" style="width: 140px;">
+                    <p style="color: #00f2fe; letter-spacing: 3px; font-size: 10px;">BLOOM EXPERIENCE</p>
+                    <h2>NEON PARTY</h2>
                     <div class="qr-bg"><div id="qr-final"></div></div>
                     <div class="info">
-                        <span class="label">CLIENTE</span>
-                        <p class="value">${datosTicket.nombre}</p>
-                        <span class="label">ENTRADA</span>
-                        <p class="value accent">${datosTicket.entrada} - S/ ${datosTicket.precio}</p>
-                        <span class="label">FECHA DEL EVENTO</span>
+                        <small style="color: #666;">CLIENTE</small>
+                        <p style="margin: 0 0 15px 0; font-weight: bold; font-size: 18px;">${datosTicket.nombre}</p>
+                        <small style="color: #666;">ENTRADA</small>
+                        <p style="margin: 0; font-weight: bold; color: #00f2fe;">${datosTicket.entrada} - S/ ${datosTicket.precio}</p>
+                        <small style="color: #666;">FECHA DEL EVENTO</small>
                         <p class="value">02 DE MAYO 2026</p>
-                    </div>
+                        
                     <div class="actions">
                         <button class="btn btn-download" onclick="window.print()">DESCARGAR</button>
                         <a href="${urlWsp}" target="_blank" class="btn btn-whatsapp">MANDAR POR WHATSAPP</a>
                     </div>
-                </div>
                 <script>
-                    new QRCode(document.getElementById("qr-final"), { 
-                        text: "${datosTicket.codigo}", 
-                        width: 200, 
-                        height: 200,
-                        correctLevel: QRCode.CorrectLevel.H 
-                    });
-                </scr"+"ipt>
+                    new QRCode(document.getElementById("qr-final"), { text: "${datosTicket.codigo}", width: 200, height: 200 });
+                <\/script>
             </body>
             </html>
         `);
         ventanita.document.close();
+    }
+
+    function enviarWhatsApp() {
+        const msg = `¡Hola ${datosTicket.nombre}! Confirmamos tu entrada para Neon Party.%0A%0A*Tipo:* ${datosTicket.entrada}%0A*Fecha:* 02 de Mayo 2026.%0A%0APresenta el QR que te acabo de entregar.`;
+        window.open(`https://wa.me/${datosTicket.whatsapp}?text=${msg}`, '_blank');
     }
 
     window.onload = async () => {
