@@ -288,23 +288,20 @@
 function descargarPDF() {
     const elemento = document.getElementById('ticket-visual');
     
-    // Configuramos el nombre del archivo basado en el nombre del cliente
-    const nombreArchivo = `Ticket_NeonParty_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
-
     const opciones = {
-        margin: [10, 10],
-        filename: nombreArchivo,
-        image: { type: 'jpeg', quality: 1 }, // Máxima calidad
+        margin: 0,
+        filename: `Ticket_${datosTicket.nombre}.pdf`,
+        image: { type: 'jpeg', quality: 1 },
         html2canvas: { 
-            scale: 4, // Aumentamos la escala para que el QR no se vea pixeleado
+            scale: 3, // Mejora la nitidez del QR
             useCORS: true, 
             backgroundColor: '#000000',
-            letterRendering: true
+            width: 380, // Forzamos el ancho de captura
+            scrollY: 0
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF: { unit: 'mm', format: [100, 170], orientation: 'portrait' } 
     };
 
-    // Ejecutamos la generación
     html2pdf().set(opciones).from(elemento).save();
 }
 
