@@ -306,17 +306,18 @@ function enviarTicketWhatsApp() {
             <title>Ticket - ${datosTicket.nombre}</title>
             <style>
                 /* ESTILOS BASE PARA EL PDF (Para simular la página) */
-                body { 
-                    background: #000; 
-                    display: flex; 
-                    justify-content: center; 
-                    align-items: flex-start; 
-                    padding: 40px 20px; 
-                    margin: 0; 
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-                    -webkit-font-smoothing: antialiased;
-                    -moz-osx-font-smoothing: grayscale;
-                }
+                @page {
+                        margin: 0;
+                        size: auto;
+                    }
+                    
+                    body { 
+                        margin: 0; 
+                        padding: 20px; /* Ajusta el aire que quieras que tenga el PDF */
+                        background: #000; 
+                        -webkit-print-color-adjust: exact; /* Fuerza a que los colores salgan negros/cian */
+                        print-color-adjust: exact;
+                    }
                 
                 .ticket-visual { 
                     width: 350px; 
