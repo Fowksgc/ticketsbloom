@@ -201,49 +201,53 @@ background: rgba(0, 242, 254, 0.1); /* Fondo cian muy sutil */
     let boxSeleccionado = null;
     const promotorLogueado = localStorage.getItem('promotor_activo') || "Invitado";
 
-    async function cargarPrecios() {
-        const grid = document.getElementById('grid-precios');
-        const { data, error } = await _supabase.from('precios').select('*').order('orden', { ascending: true });
-        
-        if (error) return;
-        grid.innerHTML = "";
-
-      const esBox = p.tipo_entrada.toUpperCase().includes("BOX");
+async function cargarPrecios() {
+    const grid = document.getElementById('grid-precios');
+    const { data, error } = await _supabase.from('precios').select('*').order('orden', { ascending: true });
     
-    // Si es BOX, solo mostramos el nombre. Si no, mostramos nombre + precio.
-    if (esBox) {
-        btn.innerHTML = `<b>${p.tipo_entrada}</b><span style="font-size:10px; opacity:0.6;">Seleccionar mesa</span>`;
-    } else {
-        btn.innerHTML = `<b>${p.tipo_entrada}</b><span>S/ ${p.precio}</span>`;
-    }
+    if (error) return;
+    grid.innerHTML = "";
 
-        data.forEach(p => {
-            const btn = document.createElement('div');
-            btn.className = 'btn-precio' + (p.activo ? '' : ' disabled');
+    data.forEach(p => {
+        const btn = document.createElement('div');
+        
+        // 1. Aplicamos clase disabled si no está activo
+        btn.className = 'btn-precio' + (p.activo ? '' : ' disabled');
+
+        // 2. Lógica para ocultar precio si es BOX
+        const esBox = p.tipo_entrada.toUpperCase().includes("BOX");
+        
+        if (esBox) {
+            // No mostramos p.precio aquí
+            btn.innerHTML = `<b>${p.tipo_entrada}</b><span style="font-size:10px; opacity:0.6;">Seleccionar mesa</span>`;
+        } else {
+            // Mostramos el precio normal de la tabla precios
             btn.innerHTML = `<b>${p.tipo_entrada}</b><span>S/ ${p.precio}</span>`;
+        }
 
-            if (p.activo) {
-                btn.onclick = () => {
-                    entradaSeleccionada = p.tipo_entrada;
+        // 3. Lógica de click
+        if (p.activo) {
+            btn.onclick = () => {
+                entradaSeleccionada = p.tipo_entrada;
+                
+                if (esBox) {
+                    precioSeleccionado = null; 
+                    generarGridBoxes();
+                    irAPaso('box');
+                } else {
                     precioSeleccionado = p.precio;
-                    
-                    if (p.tipo_entrada.toUpperCase().includes("BOX")) {
-                        generarGridBoxes();
-                        irAPaso('box');
-                    } else {
-                        boxSeleccionado = null;
-                        document.getElementById('label-seleccionada').innerText = p.tipo_entrada + " - S/ " + p.precio;
-                        irAPaso(2);
-                    }
-                };
-            } else {
-                btn.onclick = () => {
-                    alert("Esta entrada no está disponible actualmente.");
-                };
-            }
-            grid.appendChild(btn);
-        });
-    }
+                    boxSeleccionado = null;
+                    document.getElementById('label-seleccionada').innerText = p.tipo_entrada + " - S/ " + p.precio;
+                    irAPaso(2);
+                }
+            };
+        } else {
+            btn.onclick = () => alert("No disponible actualmente");
+        }
+
+        grid.appendChild(btn);
+    });
+}
 
     function irAPaso(n) {
         document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
