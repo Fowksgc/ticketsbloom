@@ -58,7 +58,9 @@
         text-transform: uppercase; margin-top: 15px; cursor: pointer; text-align: center;
     }
 
-    .grid-boxes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
+    .grid-boxes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; justify-content: center; /* Centra las columnas dentro del grid */
+    justify-items: center;}
+    
     .btn-box {
         background: var(--input-bg); border: 1px solid var(--border); color: white; aspect-ratio: 1;
         display: flex; align-items: center; justify-content: center; border-radius: 50%;
