@@ -67,6 +67,15 @@
     }
     .btn-box.ocupado { background: #222; border-color: #444; color: #444; cursor: not-allowed; opacity: 0.5; }
 
+    
+
+/* Podrías añadir una lógica en JS para poner esta clase a los boxes caros (VIP) */
+.btn-box.vip {
+    border: 1px solid #ff00ff; /* Un color neón magenta para los caros */
+    color: #ff00ff;
+    box-shadow: 0 0 10px rgba(255, 0, 255, 0.2);
+}
+
     .ticket-visual { background: #000; border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px; }
     #qrcode { background: white; padding: 12px; border-radius: 15px; display: inline-block; margin-bottom: 20px; }
 
@@ -226,9 +235,19 @@ async function cargarPrecios() {
             };
         } else {
             // Opcional: Si está inactivo, podemos hacer que muestre un aviso al tocarlo
-            btn.onclick = () => {
-                console.log("Esta entrada no está disponible actualmente.");
-            };
+        btn.onclick = () => {
+    entradaSeleccionada = p.tipo_entrada;
+    
+    if (p.tipo_entrada.toUpperCase().includes("BOX")) {
+        // No asignamos precioSeleccionado aquí, lo hará generarGridBoxes
+        generarGridBoxes();
+        irAPaso('box');
+    } else {
+        precioSeleccionado = p.precio; // Para entradas normales, el precio sigue viniendo de aquí
+        boxSeleccionado = null;
+        document.getElementById('label-seleccionada').innerText = `${p.tipo_entrada} - S/ ${p.precio}`;
+        irAPaso(2);
+    }
         }
 
         grid.appendChild(btn);
@@ -241,25 +260,40 @@ async function cargarPrecios() {
         document.getElementById(target).classList.add('active');
     }
 
-    async function generarGridBoxes() {
-        const grid = document.getElementById('grid-boxes');
-        grid.innerHTML = "<p style='grid-column: span 5; color:#666;'>Cargando...</p>";
-        const { data: listaBoxes } = await _supabase.from('boxes').select('*').order('numero_box', { ascending: true });
-        grid.innerHTML = "";
-        listaBoxes.forEach(box => {
-            const btn = document.createElement('div');
-            btn.className = 'btn-box' + (box.estado === 'ocupado' ? ' ocupado' : '');
-            btn.innerText = box.numero_box;
-            if (box.estado !== 'ocupado') {
-                btn.onclick = () => {
-                    boxSeleccionado = box.numero_box;
-                    document.getElementById('label-seleccionada').innerText = `${entradaSeleccionada} - BOX ${box.numero_box} - S/ ${precioSeleccionado}`;
-                    irAPaso(2);
-                };
-            }
-            grid.appendChild(btn);
-        });
-    }
+async function generarGridBoxes() {
+    const grid = document.getElementById('grid-boxes');
+    grid.innerHTML = "<p style='grid-column: span 5; color:#666; text-align:center;'>Cargando mapa...</p>";
+    
+    // Traemos los boxes con su respectivo precio desde la DB
+    const { data: listaBoxes, error } = await _supabase
+        .from('boxes')
+        .select('*')
+        .order('numero_box', { ascending: true });
+
+    if (error) return alert("Error al cargar boxes");
+
+    grid.innerHTML = "";
+    listaBoxes.forEach(box => {
+        const btn = document.createElement('div');
+        btn.className = 'btn-box' + (box.estado === 'ocupado' ? ' ocupado' : '');
+        btn.innerText = box.numero_box;
+
+        if (box.estado !== 'ocupado') {
+            btn.onclick = () => {
+                boxSeleccionado = box.numero_box;
+                
+                // ACTUALIZACIÓN CLAVE: El precio se define por el box elegido
+                precioSeleccionado = box.precio; 
+                
+                document.getElementById('label-seleccionada').innerText = 
+                    `${entradaSeleccionada} - BOX ${box.numero_box} - S/ ${precioSeleccionado}`;
+                
+                irAPaso(2);
+            };
+        }
+        grid.appendChild(btn);
+    });
+}
 
 async function generarVenta() {
     // 1. Validaciones iniciales
