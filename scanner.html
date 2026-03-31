@@ -3,85 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TicketsBloom - Scanner Pro</title>
+    <title>Neon Scanner Pro - Bloom</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
     <style>
-        :root { --bg: #050509; --accent: #00f2fe; --card: #10101e; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; text-align: center; overflow: hidden; }
+        :root { 
+            --bg: #050509; 
+            --accent: #00f2fe; 
+            --card: #10101e; 
+            --success: #00ff88;
+            --error: #ff4d4d;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: var(--bg); 
+            color: white; 
+            margin: 0; 
+            text-align: center; 
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
         
         #container-cam { 
-            position: relative; width: 100%; height: 65vh; 
-            background: #000; overflow: hidden; display: flex;
-            align-items: center; justify-content: center;
-            border-bottom: 1px solid #1f1f33;
+            position: relative; 
+            width: 100%; 
+            height: 70vh; 
+            background: #000; 
+            overflow: hidden; 
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+            border-bottom: 2px solid #1f1f33;
         }
 
-        video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        video { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            display: block; 
+        }
 
+        /* Mira del Scanner */
         .scanner-overlay { 
-            position: absolute; width: 220px; height: 220px; 
-            border: 2px solid var(--accent); border-radius: 25px; 
-            box-shadow: 0 0 0 4000px rgba(0,0,0,0.6); pointer-events: none; z-index: 5;
+            position: absolute; 
+            width: 240px; 
+            height: 240px; 
+            border: 2px solid var(--accent); 
+            border-radius: 30px; 
+            box-shadow: 0 0 0 4000px rgba(0,0,0,0.7); 
+            pointer-events: none; 
+            z-index: 5;
+        }
+
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: var(--accent);
+            top: 0;
+            left: 0;
+            box-shadow: 0 0 15px var(--accent);
+            animation: scanMove 2s infinite linear;
+        }
+
+        @keyframes scanMove {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
         }
         
-        .btn-init { 
-            background: var(--accent); color: #000; border: none; padding: 22px; 
-            width: 85%; border-radius: 18px; font-weight: 900; margin-top: 25px;
-            font-size: 15px; letter-spacing: 1px; box-shadow: 0 10px 30px rgba(0,242,254,0.3);
+        .footer-controls {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        #result-box { 
-            position: fixed; bottom: 25px; left: 5%; width: 90%; 
-            padding: 25px; border-radius: 25px; background: var(--card); 
-            display: none; z-index: 100; border: 1px solid #333;
-            animation: slideIn 0.3s ease-out;
+        .btn-init { 
+            background: var(--accent); 
+            color: #000; 
+            border: none; 
+            padding: 20px; 
+            width: 80%; 
+            max-width: 300px;
+            border-radius: 20px; 
+            font-weight: 900; 
+            font-size: 16px; 
+            letter-spacing: 1px; 
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,242,254,0.3);
         }
-        @keyframes slideIn { from { transform: translateY(100px); } to { transform: translateY(0); } }
+
+        /* Caja de Resultados */
+        #result-box { 
+            position: fixed; 
+            bottom: 30px; 
+            left: 5%; 
+            width: 90%; 
+            padding: 30px 20px; 
+            border-radius: 30px; 
+            background: var(--card); 
+            display: none; 
+            z-index: 100; 
+            border: 2px solid #333;
+            animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes slideUp { 
+            from { transform: translateY(150px); opacity: 0; } 
+            to { transform: translateY(0); opacity: 1; } 
+        }
+
+        .res-status { font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+        .res-name { font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+        .res-detail { font-size: 14px; font-weight: 600; opacity: 0.9; }
+
     </style>
 </head>
 <body>
 
     <div id="container-cam">
         <video id="video" autoplay muted playsinline></video>
-        <div class="scanner-overlay"></div>
+        <div class="scanner-overlay">
+            <div class="scanner-line"></div>
+        </div>
     </div>
 
-    <button id="btn-start" class="btn-init" onclick="initCamara()">ACTIVAR ESCÁNER</button>
+    <div class="footer-controls">
+        <button id="btn-start" class="btn-init" onclick="initCamara()">ACTIVAR CÁMARA</button>
+    </div>
 
     <div id="result-box">
-        <div id="res-status" style="font-size:10px; color:#888; text-transform:uppercase; letter-spacing:2px;">Estado</div>
-        <div id="res-name" style="font-size:22px; font-weight:bold; margin: 5px 0;">---</div>
-        <div id="res-type" style="color:var(--accent); font-weight:600;">---</div>
+        <div id="res-status" class="res-status">Estado</div>
+        <div id="res-name" class="res-name">---</div>
+        <div id="res-type" class="res-detail">---</div>
     </div>
 
     <script>
-        // 1. VARIABLES GLOBALES (Se inicializan solas al cargar)
-        const SUPABASE_URL = 'TU_URL_AQUÍ'; 
-        const SUPABASE_KEY = 'TU_KEY_ANON_AQUÍ';
+        // CONFIGURACIÓN SUPABASE
+        const SUPABASE_URL = 'https://nakrilawyrppxvjnrbks.supabase.co/'; 
+        const SUPABASE_KEY = 'sb_publishable_JJGnQbTeKrQ8m02e76pZpg_nJ9lGp0m';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let video, canvasElement, canvas, scanning = false;
 
-        // 2. ESPERAR A QUE EL DOM ESTÉ LISTO
         document.addEventListener("DOMContentLoaded", () => {
             video = document.getElementById("video");
             canvasElement = document.createElement("canvas");
             canvas = canvasElement.getContext("2d");
         });
 
-        // 3. INICIAR CÁMARA
         async function initCamara() {
-            if (!video) return alert("Error: El sistema no ha cargado. Refresca la página.");
-
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
                 });
                 
                 video.srcObject = stream;
+                video.setAttribute("playsinline", true);
                 
                 video.onloadedmetadata = () => {
                     video.play();
@@ -90,14 +176,12 @@
                     requestAnimationFrame(tick);
                 };
             } catch (err) {
-                alert("Error de cámara: Asegúrate de usar HTTPS y dar permisos.");
-                console.error(err);
+                alert("ERROR: Para escanear, usa HTTPS y permite el acceso a la cámara.");
             }
         }
 
-        // 4. BUCLE DE ESCANEO
         function tick() {
-            if (video && video.readyState === video.HAVE_ENOUGH_DATA && scanning) {
+            if (video.readyState === video.HAVE_ENOUGH_DATA && scanning) {
                 canvasElement.height = video.videoHeight;
                 canvasElement.width = video.videoWidth;
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
@@ -113,7 +197,6 @@
             if (scanning) requestAnimationFrame(tick);
         }
 
-        // 5. VALIDACIÓN CON SUPABASE
         async function validarTicket(codigo) {
             const box = document.getElementById('result-box');
             const nameTxt = document.getElementById('res-name');
@@ -121,39 +204,68 @@
             const typeTxt = document.getElementById('res-type');
 
             box.style.display = 'block';
-            nameTxt.innerText = codigo.split('|')[0] || "Ticket";
+            nameTxt.innerText = "VERIFICANDO...";
+            renderUI(null, "SCANNING", "Buscando en base de datos...");
 
             try {
-                const { data, error } = await _supabase.from('tickets').select('*').eq('codigo_qr', codigo).single();
+                // 1. Consultar ticket
+                const { data, error } = await _supabase
+                    .from('tickets')
+                    .select('*')
+                    .eq('codigo_qr', codigo)
+                    .single();
 
                 if (error || !data) {
-                    renderUI(false, "INVÁLIDO", "TICKET NO EXISTE");
-                } else if (data.usado) {
-                    renderUI(false, "DENEGADO", "YA FUE USADO");
-                } else {
-                    await _supabase.from('tickets').update({ usado: true }).eq('codigo_qr', codigo);
+                    renderUI(false, "INVÁLIDO", "EL TICKET NO EXISTE");
+                    nameTxt.innerText = "ERROR QR";
+                } 
+                else if (data.usado) {
+                    renderUI(false, "DENEGADO", "YA INGRESÓ AL EVENTO");
+                    nameTxt.innerText = data.nombre_cliente;
+                } 
+                else {
+                    // 2. Marcar como usado
+                    await _supabase
+                        .from('tickets')
+                        .update({ usado: true })
+                        .eq('codigo_qr', codigo);
+
                     renderUI(true, "PERMITIDO", data.tipo_entrada);
+                    nameTxt.innerText = data.nombre_cliente;
                 }
-            } catch (e) { 
-                renderUI(false, "ERROR", "FALLO DE RED"); 
+            } catch (e) {
+                renderUI(false, "ERROR", "FALLA DE CONEXIÓN");
             }
 
-            // Reiniciar tras 3.5 segundos
-            setTimeout(() => { 
-                box.style.display = 'none'; 
-                scanning = true; 
-                requestAnimationFrame(tick); 
+            // REINICIO AUTOMÁTICO (3.5 segundos)
+            setTimeout(() => {
+                box.style.display = 'none';
+                scanning = true;
+                requestAnimationFrame(tick);
             }, 3500);
         }
 
         function renderUI(ok, status, detail) {
             const box = document.getElementById('result-box');
-            box.style.background = ok ? "#00ff88" : "#ff4d4d";
-            box.style.color = ok ? "#000" : "#fff";
+            
+            if (ok === null) { // Estado Cargando
+                box.style.background = "#10101e";
+                box.style.color = "white";
+                box.style.borderColor = "#333";
+            } else if (ok) { // Éxito
+                box.style.background = "#00ff88";
+                box.style.color = "#000";
+                box.style.borderColor = "#00ff88";
+                if (navigator.vibrate) navigator.vibrate(200);
+            } else { // Fallo
+                box.style.background = "#ff4d4d";
+                box.style.color = "#fff";
+                box.style.borderColor = "#ff4d4d";
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            }
+
             document.getElementById('res-status').innerText = status;
             document.getElementById('res-type').innerText = detail;
-            document.getElementById('res-type').style.color = ok ? "#000" : "#fff";
-            if (navigator.vibrate) navigator.vibrate(ok ? 200 : [100, 50, 100]);
         }
     </script>
 </body>
