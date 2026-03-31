@@ -201,280 +201,166 @@ background: rgba(0, 242, 254, 0.1); /* Fondo cian muy sutil */
     let boxSeleccionado = null;
     const promotorLogueado = localStorage.getItem('promotor_activo') || "Invitado";
 
-async function cargarPrecios() {
-    const grid = document.getElementById('grid-precios');
-    const { data, error } = await _supabase.from('precios').select('*').order('orden', { ascending: true });
-    
-    if (error) return;
-    grid.innerHTML = "";
-
-    data.forEach(p => {
-        const btn = document.createElement('div');
+    async function cargarPrecios() {
+        const grid = document.getElementById('grid-precios');
+        const { data, error } = await _supabase.from('precios').select('*').order('orden', { ascending: true });
         
-        // Aplicamos clase disabled si no está activo
-        btn.className = 'btn-precio' + (p.activo ? '' : ' disabled');
-        btn.innerHTML = `<b>${p.tipo_entrada}</b><span>S/ ${p.precio}</span>`;
+        if (error) return;
+        grid.innerHTML = "";
 
-        // Solo funciona si está activo
-        if (p.activo) {
-            btn.onclick = () => {
-                entradaSeleccionada = p.tipo_entrada;
-                precioSeleccionado = p.precio;
-                
-                if (p.tipo_entrada.toUpperCase().includes("BOX")) {
-                    generarGridBoxes();
-                    irAPaso('box');
-                } else {
-                    boxSeleccionado = null;
-                    document.getElementById('label-seleccionada').innerText = p.tipo_entrada + " - S/ " + p.precio;
-                    irAPaso(2);
-                }
-            };
-        } else {
-            // Si está inactivo, solo muestra un mensaje o no hace nada
-            btn.onclick = () => {
-                alert("Esta entrada no está disponible actualmente.");
-            };
-        }
-        grid.appendChild(btn);
-    });
-}
+        data.forEach(p => {
+            const btn = document.createElement('div');
+            btn.className = 'btn-precio' + (p.activo ? '' : ' disabled');
+            btn.innerHTML = `<b>${p.tipo_entrada}</b><span>S/ ${p.precio}</span>`;
+
+            if (p.activo) {
+                btn.onclick = () => {
+                    entradaSeleccionada = p.tipo_entrada;
+                    precioSeleccionado = p.precio;
+                    
+                    if (p.tipo_entrada.toUpperCase().includes("BOX")) {
+                        generarGridBoxes();
+                        irAPaso('box');
+                    } else {
+                        boxSeleccionado = null;
+                        document.getElementById('label-seleccionada').innerText = p.tipo_entrada + " - S/ " + p.precio;
+                        irAPaso(2);
+                    }
+                };
+            } else {
+                btn.onclick = () => {
+                    alert("Esta entrada no está disponible actualmente.");
+                };
+            }
+            grid.appendChild(btn);
+        });
+    }
 
     function irAPaso(n) {
         document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
         const target = n === 'box' ? 'step-box' : 'step-' + n;
-        document.getElementById(target).classList.add('active');
+        const el = document.getElementById(target);
+        if(el) el.classList.add('active');
     }
 
-async function generarGridBoxes() {
-    const grid = document.getElementById('grid-boxes');
-    grid.innerHTML = "<p style='grid-column: span 5; color:#666; text-align:center;'>Cargando mapa...</p>";
-    
-    // Traemos los boxes con su respectivo precio desde la DB
-    const { data: listaBoxes, error } = await _supabase
-        .from('boxes')
-        .select('*')
-        .order('numero_box', { ascending: true });
+    async function generarGridBoxes() {
+        const grid = document.getElementById('grid-boxes');
+        grid.innerHTML = "<p style='grid-column: span 5; color:#666; text-align:center;'>Cargando mapa...</p>";
+        
+        const { data: listaBoxes, error } = await _supabase
+            .from('boxes')
+            .select('*')
+            .order('numero_box', { ascending: true });
 
-    if (error) return alert("Error al cargar boxes");
+        if (error) return alert("Error al cargar boxes");
 
-    grid.innerHTML = "";
-    listaBoxes.forEach(box => {
-        const btn = document.createElement('div');
-        btn.className = 'btn-box' + (box.estado === 'ocupado' ? ' ocupado' : '');
-        btn.innerText = box.numero_box;
+        grid.innerHTML = "";
+        listaBoxes.forEach(box => {
+            const btn = document.createElement('div');
+            btn.className = 'btn-box' + (box.estado === 'ocupado' ? ' ocupado' : '');
+            btn.innerText = box.numero_box;
 
-        if (box.estado !== 'ocupado') {
-            btn.onclick = () => {
-                boxSeleccionado = box.numero_box;
-                
-                // ACTUALIZACIÓN CLAVE: El precio se define por el box elegido
-                precioSeleccionado = box.precio; 
-                
-                document.getElementById('label-seleccionada').innerText = 
-                    `${entradaSeleccionada} - BOX ${box.numero_box} - S/ ${precioSeleccionado}`;
-                
-                irAPaso(2);
-            };
-        }
-        grid.appendChild(btn);
-    });
-}
-
-async function generarVenta() {
-    // 1. Validaciones iniciales
-    const whatsappInput = document.getElementById('whatsapp-cliente').value.trim();
-    const nombreInput = document.getElementById('nombre-cliente').value.trim().toUpperCase();
-
-    if (whatsappInput.length !== 9 || isNaN(whatsappInput)) {
-        alert("El número de WhatsApp debe tener exactamente 9 dígitos.");
-        return;
+            if (box.estado !== 'ocupado') {
+                btn.onclick = () => {
+                    boxSeleccionado = box.numero_box;
+                    precioSeleccionado = box.precio; 
+                    document.getElementById('label-seleccionada').innerText = `${entradaSeleccionada} - BOX ${box.numero_box} - S/ ${precioSeleccionado}`;
+                    irAPaso(2);
+                };
+            }
+            grid.appendChild(btn);
+        });
     }
 
-    if (!nombreInput || !whatsappInput) {
-        alert("Completa los datos del cliente");
-        return;
-    }
+    async function generarVenta() {
+        const whatsappInput = document.getElementById('whatsapp-cliente').value.trim();
+        const nombreInput = document.getElementById('nombre-cliente').value.trim().toUpperCase();
 
-    console.log("Datos válidos, procediendo...");
-
-    // 2. Preparar datos para el ticket
-    const codigoNuevo = `NP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-    const tipoFinal = boxSeleccionado ? `BOX ${boxSeleccionado}` : entradaSeleccionada;
-    const fechaISO = new Date().toISOString(); // Formato correcto para Supabase
-
-    // Definimos el objeto que vamos a enviar (esto evita el error de "not defined")
-    const objetoVenta = {
-        codigo_qr: codigoNuevo,
-        nombre_cliente: nombreInput,
-        whatsapp: "51" + whatsappInput, // Agregamos prefijo de una vez
-        tipo_entrada: tipoFinal,
-        promotor: promotorLogueado,
-        fecha_venta: fechaISO,
-        usado: false
-    };
-
-    try {
-        // 3. Insertar en Supabase (Solo una vez)
-        const { data, error } = await _supabase
-            .from('tickets')
-            .insert([objetoVenta])
-            .select();
-
-        if (error) throw error; // Si hay error, salta directamente al catch
-
-        console.log("Venta guardada exitosamente en Supabase");
-
-        // 4. Lógica post-guardado (Bloqueo de Box)
-        if (boxSeleccionado) {
-            await _supabase
-                .from('boxes')
-                .update({ estado: 'ocupado' })
-                .eq('numero_box', boxSeleccionado);
+        if (whatsappInput.length !== 9 || isNaN(whatsappInput)) {
+            alert("El número de WhatsApp debe tener exactamente 9 dígitos.");
+            return;
         }
 
-        // 5. Actualizar variables globales y UI para el Paso 3
-        datosTicket = { 
-            nombre: nombreInput, 
-            codigo: codigoNuevo, 
-            whatsapp: "51" + whatsappInput, 
-            entrada: tipoFinal, 
-            precio: precioSeleccionado 
+        if (!nombreInput || !whatsappInput) {
+            alert("Completa los datos del cliente");
+            return;
+        }
+
+        const codigoNuevo = `NP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+        const tipoFinal = boxSeleccionado ? `BOX ${boxSeleccionado}` : entradaSeleccionada;
+        const fechaISO = new Date().toISOString();
+
+        const objetoVenta = {
+            codigo_qr: codigoNuevo,
+            nombre_cliente: nombreInput,
+            whatsapp: "51" + whatsappInput,
+            tipo_entrada: tipoFinal,
+            promotor: promotorLogueado,
+            fecha_venta: fechaISO,
+            usado: false
         };
 
-        // Llenar datos en la pantalla del ticket
-        document.getElementById('res-nombre').innerText = nombreInput;
-        document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
-        document.getElementById('res-promotor').innerText = promotorLogueado.toUpperCase();
+        try {
+            const { error } = await _supabase.from('tickets').insert([objetoVenta]);
+            if (error) throw error;
 
-        const resFecha = document.getElementById('res-fecha');
-        if (resFecha) {
-            resFecha.innerText = "02 DE MAYO 2026";
-        }
-
-        // 6. Cambiar de pantalla
-        irAPaso(3);
-
-        // 7. Generar el código QR físicamente
-        setTimeout(() => {
-            const qrContainer = document.getElementById("qrcode");
-            if (qrContainer) {
-                qrContainer.innerHTML = ""; // Limpiar anterior
-                new QRCode(qrContainer, { 
-                    text: codigoNuevo, 
-                    width: 160, 
-                    height: 160,
-                    correctLevel: QRCode.CorrectLevel.H 
-                });
+            if (boxSeleccionado) {
+                await _supabase.from('boxes').update({ estado: 'ocupado' }).eq('numero_box', boxSeleccionado);
             }
-        }, 300);
 
-    } catch (error) {
-        console.error("Error crítico:", error.message);
-        alert("No se pudo registrar la venta: " + error.message);
+            datosTicket = { 
+                nombre: nombreInput, 
+                codigo: codigoNuevo, 
+                whatsapp: "51" + whatsappInput, 
+                entrada: tipoFinal, 
+                precio: precioSeleccionado 
+            };
+
+            document.getElementById('res-nombre').innerText = nombreInput;
+            document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
+            document.getElementById('res-promotor').innerText = promotorLogueado.toUpperCase();
+
+            irAPaso(3);
+
+            setTimeout(() => {
+                const qrContainer = document.getElementById("qrcode");
+                if (qrContainer) {
+                    qrContainer.innerHTML = "";
+                    new QRCode(qrContainer, { text: codigoNuevo, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.H });
+                }
+            }, 300);
+
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
     }
-}
-  
+
+    async function enviarTicketWhatsApp() {
+        const { jsPDF } = window.jspdf;
+        const elementoTicket = document.getElementById('ticket-area-pdf');
+        if (!elementoTicket || !datosTicket) return alert("Error: Datos insuficientes");
+
+        try {
+            const canvas = await html2canvas(elementoTicket, { scale: 3, backgroundColor: "#050509", useCORS: true });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [canvas.width / 3, canvas.height / 3] });
+
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
+            pdf.save(`TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`);
+
+            setTimeout(() => {
+                const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket PDF descargado.*`;
+                window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
+            }, 1000);
+        } catch (err) {
+            alert("Error al generar PDF");
+        }
+    }
+
     window.onload = async () => {
         document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotorLogueado.toUpperCase();
         await cargarPrecios();
     };
-
-async function enviarTicketWhatsApp() {
-    const { jsPDF } = window.jspdf;
-    const elementoTicket = document.getElementById('ticket-area-pdf');
-    
-    // 1. Buscamos el Canvas o la Imagen del QR
-    const qrCanvas = document.querySelector('#qrcode canvas');
-    const qrImg = document.querySelector('#qrcode img');
-
-    if (!elementoTicket || !datosTicket) return alert("Error: Datos insuficientes");
-
-    try {
-        // --- TRUCO DE SINCRONIZACIÓN ---
-        // Esperamos a que el QR realmente tenga información técnica
-        let qrListo = false;
-        let intentos = 0;
-
-        while (!qrListo && intentos < 10) {
-            // Verificamos si el canvas tiene contenido o si la imagen ya tiene SRC
-            if ((qrCanvas && qrCanvas.width > 0) || (qrImg && qrImg.src.length > 100)) {
-                qrListo = true;
-            } else {
-                await new Promise(r => setTimeout(r, 200)); // Esperamos 200ms por intento
-                intentos++;
-            }
-        }
-
-        // Si el QR es un canvas, lo forzamos a imagen para que html2canvas lo vea sí o sí
-        if (qrCanvas && qrListo) {
-            qrImg.src = qrCanvas.toDataURL("image/png");
-            qrImg.style.display = "inline-block";
-            qrCanvas.style.display = "none";
-        }
-        // -------------------------------
-
-        // Pequeño respiro extra para que el DOM se actualice
-        await new Promise(r => setTimeout(r, 300));
-
-        const canvas = await html2canvas(elementoTicket, {
-            scale: 3, 
-            backgroundColor: "#050509",
-            useCORS: true,
-            logging: false,
-            // Forzamos a que ignore elementos ocultos que puedan tapar el QR
-            ignoreElements: (el) => el.classList.contains('no-export') 
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'px',
-            format: [canvas.width / 3, canvas.height / 3]
-        });
-
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
-
-        const nombreArchivo = `TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
-        pdf.save(nombreArchivo);
-
-        // Notificar y abrir WhatsApp
-        setTimeout(() => {
-            const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket PDF descargado.*%0A%0A*Adjúntalo aquí abajo.* 👇`;
-            window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
-        }, 1000);
-
-    } catch (err) {
-        console.error("Error crítico:", err);
-        alert("El sistema está lento. Por favor, intenta presionar el botón una vez más.");
-    }
-}
-
-  function validarDatosCliente() {
-    const nombre = document.getElementById('nombre-cliente').value.trim();
-    const whatsapp = document.getElementById('whatsapp-cliente').value.trim();
-
-    // Validar nombre vacío
-    if (nombre === "") {
-        alert("Por favor, ingresa el nombre del cliente.");
-        return false;
-    }
-
-    // Validar que tenga exactamente 9 dígitos y sean números
-    const regexWhatsapp = /^[0-9]{9}$/;
-    
-    if (!regexWhatsapp.test(whatsapp)) {
-        alert("El número de WhatsApp debe tener exactamente 9 dígitos numéricos.");
-        return false;
-    }
-
-    // Si todo está bien, guardamos los datos en tu objeto global
-    datosTicket.nombre = nombre;
-    datosTicket.whatsapp = "51" + whatsapp; // Agregamos el prefijo de Perú para el link de WA
-    
-    return true;
-}
 </script>
 </body>
 </html>
