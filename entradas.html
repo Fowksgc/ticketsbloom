@@ -351,41 +351,71 @@ async function cargarPrecios() {
 async function enviarTicketWhatsApp() {
     const { jsPDF } = window.jspdf;
     const elementoTicket = document.getElementById('ticket-area-pdf');
-    
+
+    // 1. Buscamos el Canvas o la Imagen del QR
+    const qrCanvas = document.querySelector('#qrcode canvas');
+    const qrImg = document.querySelector('#qrcode img');
+
     if (!elementoTicket || !datosTicket) return alert("Error: Datos insuficientes");
 
     try {
-        // --- NUEVA ESPERA PARA EL QR ---
-        // Detenemos la ejecución 500ms para asegurar que el QR se dibuje en el DOM
-        await new Promise(resolve => setTimeout(resolve, 800)); 
+        // --- TRUCO DE SINCRONIZACIÓN ---
+        // Esperamos a que el QR realmente tenga información técnica
+        let qrListo = false;
+        let intentos = 0;
+
+        while (!qrListo && intentos < 10) {
+            // Verificamos si el canvas tiene contenido o si la imagen ya tiene SRC
+            if ((qrCanvas && qrCanvas.width > 0) || (qrImg && qrImg.src.length > 100)) {
+                qrListo = true;
+            } else {
+                await new Promise(r => setTimeout(r, 200)); // Esperamos 200ms por intento
+                intentos++;
+            }
+        }
+
+        // Si el QR es un canvas, lo forzamos a imagen para que html2canvas lo vea sí o sí
+        if (qrCanvas && qrListo) {
+            qrImg.src = qrCanvas.toDataURL("image/png");
+            qrImg.style.display = "inline-block";
+            qrCanvas.style.display = "none";
+        }
         // -------------------------------
 
-        const canvas = await html2canvas(elementoTicket, { 
+        // Pequeño respiro extra para que el DOM se actualice
+        await new Promise(r => setTimeout(r, 300));
+
+        const canvas = await html2canvas(elementoTicket, {
             scale: 3, 
-            backgroundColor: "#050509", 
-            useCORS: true 
+            backgroundColor: "#050509",
+            useCORS: true,
+            logging: false,
+            // Forzamos a que ignore elementos ocultos que puedan tapar el QR
+            ignoreElements: (el) => el.classList.contains('no-export') 
         });
 
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({ 
-            orientation: 'portrait', 
-            unit: 'px', 
-            format: [canvas.width / 3, canvas.height / 3] 
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [canvas.width / 3, canvas.height / 3]
         });
 
         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
-        
+
         const nombreArchivo = `TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
         pdf.save(nombreArchivo);
 
+        // Notificar y abrir WhatsApp
         setTimeout(() => {
-            const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket PDF descargado.*`;
+            const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket PDF descargado.*%0A%0A*Adjúntalo aquí abajo.* 👇`;
             window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
         }, 1000);
 
     } catch (err) {
-        console.error(err);
-        alert("Error al generar PDF");
+        console.error("Error crítico:", err);
+        alert("El sistema está lento. Por favor, intenta presionar el botón una vez más.");
     }
 }
 
