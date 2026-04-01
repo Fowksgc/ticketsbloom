@@ -17,14 +17,10 @@
         body { 
             font-family: -apple-system, sans-serif; background: var(--bg); 
             color: white; margin: 0; padding: 0; display: flex; flex-direction: column; 
-            /* Solución iPhone: Usamos dvh (Dynamic Viewport Height) */
-            height: 100dvh; 
-            overflow: hidden;
-            /* Protege la parte superior contra el Notch en iPhone */
+            height: 100dvh; overflow: hidden;
             padding-top: env(safe-area-inset-top);
         }
         
-        /* CÁMARA: Altura reducida y flexible para iPhone */
         #container-cam { 
             position: relative; width: 100%; height: 35vh; background: #000; 
             display: flex; align-items: center; justify-content: center;
@@ -33,7 +29,6 @@
 
         video { width: 100%; height: 100%; object-fit: cover; }
 
-        /* RECUADRO CENTRADO */
         .scanner-overlay { 
             position: absolute; width: 160px; height: 160px; 
             border: 3px solid var(--accent); border-radius: 20px; 
@@ -41,45 +36,45 @@
             top: 50%; left: 50%; transform: translate(-50%, -50%);
         }
 
-        /* INFO DEL ASISTENTE */
+        /* CONTENEDOR DE INFORMACIÓN MAXIMIZADO */
         #result-info { 
-            flex: 1; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; padding: 10px;
+            flex: 1; display: flex; align-items: center; justify-content: center; padding: 15px;
         }
 
         .card-asistente {
-            width: 85%; padding: 15px 10px; border-radius: 18px;
+            width: 95%; height: 90%; border-radius: 28px;
             background: var(--card); border: 2px solid #222;
-            text-align: center;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center; transition: all 0.3s ease;
+            box-sizing: border-box;
         }
 
+        /* ESTADO: Grande y llamativo */
         .res-status { 
-            font-size: 22px; font-weight: 900; letter-spacing: 1px; 
-            text-transform: uppercase; margin-bottom: 6px; display: block;
+            font-size: 42px; font-weight: 900; letter-spacing: -1px; 
+            text-transform: uppercase; margin-bottom: 5px; line-height: 1;
         }
 
-        .res-name { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 3px; }
-        .res-type { font-size: 12px; font-weight: 500; opacity: 0.7; }
+        .res-name { font-size: 22px; font-weight: 700; color: #fff; margin-top: 10px; text-transform: uppercase; }
+        .res-type { font-size: 16px; font-weight: 500; opacity: 0.8; margin-top: 5px; }
 
-        /* BOTÓN CLÁSICO Y SEGURO */
         .footer-action {
-            /* Protege la parte inferior contra la barra de gestos de iPhone */
-            padding: 10px 20px calc(20px + env(safe-area-inset-bottom)) 20px;
+            padding: 10px 20px calc(15px + env(safe-area-inset-bottom)) 20px;
             display: flex; justify-content: center; background: var(--bg);
         }
 
         .btn-main { 
             background: var(--accent); color: #000; border: none; 
-            padding: 15px; width: 100%; max-width: 280px;
-            border-radius: 12px; font-weight: 800; font-size: 14px; 
+            padding: 18px; width: 100%; max-width: 300px;
+            border-radius: 15px; font-weight: 900; font-size: 16px; 
             text-transform: uppercase; cursor: pointer;
-            display: block;
         }
 
         #btn-next { display: none; background: #fff; color: #000; }
 
-        .pulse { animation: pulse-ani 0.5s infinite alternate; }
-        @keyframes pulse-ani { from { transform: scale(1); } to { transform: scale(1.02); } }
+        .pulse { animation: pulse-ani 0.4s infinite alternate; }
+        @keyframes pulse-ani { from { transform: scale(1); } to { transform: scale(1.04); } }
     </style>
 </head>
 <body>
@@ -91,15 +86,15 @@
 
     <div id="result-info">
         <div class="card-asistente" id="card-ui">
-            <span id="res-status" class="res-status" style="color:#444;">ESPERANDO...</span>
-            <div id="res-name" class="res-name">Listo para escanear</div>
-            <div id="res-type" class="res-type">Neon Party 2026</div>
+            <span id="res-status" class="res-status" style="color:#333;">LISTO</span>
+            <div id="res-name" class="res-name">Esperando ticket</div>
+            <div id="res-type" class="res-type">Scanner Oficial</div>
         </div>
     </div>
 
     <div class="footer-action">
         <button id="btn-start" class="btn-main" onclick="initCamara()">ACTIVAR CÁMARA</button>
-        <button id="btn-next" class="btn-main" onclick="resetScanner()">SIGUIENTE TICKET</button>
+        <button id="btn-next" class="btn-main" onclick="resetScanner()">ESCANEAR SIGUIENTE</button>
     </div>
 
     <script>
@@ -128,7 +123,7 @@
                     requestAnimationFrame(tick);
                 };
             } catch (err) {
-                alert("Error: Activa los permisos de cámara.");
+                alert("Error de cámara.");
             }
         }
 
@@ -149,6 +144,7 @@
         }
 
         async function validarTicket(codigo) {
+            const card = document.getElementById('card-ui');
             const statusTxt = document.getElementById('res-status');
             const nameTxt = document.getElementById('res-name');
             const overlay = document.getElementById('overlay');
@@ -161,11 +157,11 @@
                 const { data, error } = await _supabase.from('tickets').select('*').eq('codigo_qr', codigo).single();
 
                 if (error || !data) {
-                    renderUI(false, "INVÁLIDO", "TICKET NO EXISTE");
-                    nameTxt.innerText = "ERROR DE LECTURA";
+                    renderUI(false, "INVÁLIDO", "NO EXISTE");
+                    nameTxt.innerText = "ERROR QR";
                 } 
                 else if (data.usado) {
-                    renderUI(false, "DENEGADO", "YA ENTRÓ AL EVENTO");
+                    renderUI(false, "DENEGADO", "YA INGRESÓ");
                     nameTxt.innerText = data.nombre_cliente;
                 } 
                 else {
@@ -174,7 +170,7 @@
                     nameTxt.innerText = data.nombre_cliente;
                 }
             } catch (e) {
-                renderUI(false, "ERROR", "SIN CONEXIÓN");
+                renderUI(false, "ERROR", "SIN RED");
             }
             document.getElementById('btn-next').style.display = 'block';
         }
@@ -182,11 +178,14 @@
         function resetScanner() {
             document.getElementById('btn-next').style.display = 'none';
             document.getElementById('overlay').style.display = "block";
-            document.getElementById('card-ui').style.borderColor = "#222";
-            document.getElementById('card-ui').classList.remove('pulse');
-            document.getElementById('res-status').innerText = "ESPERANDO...";
-            document.getElementById('res-status').style.color = "#444";
-            document.getElementById('res-name').innerText = "Listo para escanear";
+            const card = document.getElementById('card-ui');
+            card.style.background = "var(--card)";
+            card.style.borderColor = "#222";
+            card.classList.remove('pulse');
+            document.getElementById('res-status').innerText = "LISTO";
+            document.getElementById('res-status').style.color = "#333";
+            document.getElementById('res-name').innerText = "Esperando ticket";
+            document.getElementById('res-name').style.color = "#fff";
             scanning = true;
             requestAnimationFrame(tick);
         }
@@ -194,15 +193,21 @@
         function renderUI(ok, status, detail) {
             const card = document.getElementById('card-ui');
             const statusTxt = document.getElementById('res-status');
+            const nameTxt = document.getElementById('res-name');
             const color = ok ? "#00ff88" : "#ff4d4d"; 
             
+            // CAMBIO TOTAL DE COLOR PARA MÁXIMA VISIBILIDAD
+            card.style.background = color;
             card.style.borderColor = color;
             card.classList.add('pulse');
             
             statusTxt.innerText = status;
-            statusTxt.style.color = color;
+            statusTxt.style.color = ok ? "#000" : "#fff";
             
+            nameTxt.style.color = ok ? "#000" : "#fff";
             document.getElementById('res-type').innerText = detail;
+            document.getElementById('res-type').style.color = ok ? "#000" : "#fff";
+
             if (navigator.vibrate) ok ? navigator.vibrate(200) : navigator.vibrate([100, 50, 100]);
         }
     </script>
