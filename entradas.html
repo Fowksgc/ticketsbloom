@@ -348,27 +348,57 @@ async function cargarPrecios() {
         }
     }
 
-    async function enviarTicketWhatsApp() {
-        const { jsPDF } = window.jspdf;
-        const elementoTicket = document.getElementById('ticket-area-pdf');
-        if (!elementoTicket || !datosTicket) return alert("Error: Datos insuficientes");
+async function enviarTicketWhatsApp() {
+    const { jsPDF } = window.jspdf;
+    const elementoTicket = document.getElementById('ticket-area-pdf');
+    
+    if (!elementoTicket || !datosTicket) return alert("Error: Datos insuficientes");
 
-        try {
-            const canvas = await html2canvas(elementoTicket, { scale: 3, backgroundColor: "#050509", useCORS: true });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [canvas.width / 3, canvas.height / 3] });
+    try {
+        // 1. ESPERA CRÍTICA: Damos 300ms para asegurar que el QR se haya dibujado 
+        // completamente en el DOM antes de que html2canvas lo capture.
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
-            pdf.save(`TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`);
+        // 2. CAPTURA DEL TICKET: scale: 3 para alta resolución
+        const canvas = await html2canvas(elementoTicket, { 
+            scale: 3, 
+            backgroundColor: "#050509", 
+            useCORS: true,
+            logging: false 
+        });
 
-            setTimeout(() => {
-                const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket PDF descargado.*`;
-                window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
-            }, 1000);
-        } catch (err) {
-            alert("Error al generar PDF");
-        }
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Ajustamos dimensiones del PDF al tamaño del canvas
+        const pdfWidth = canvas.width / 3;
+        const pdfHeight = canvas.height / 3;
+        const pdf = new jsPDF({ 
+            orientation: 'portrait', 
+            unit: 'px', 
+            format: [pdfWidth, pdfHeight] 
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        
+        // 3. DESCARGA DEL PDF
+        const nombreArchivo = `TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
+        pdf.save(nombreArchivo);
+
+        // 4. ENVÍO A WHATSAPP
+        // Usamos un pequeño delay para que la descarga no bloquee la apertura de la pestaña
+        setTimeout(() => {
+            const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY 2026*.%0A%0A✅ *Tu ticket ha sido generado y descargado.*%0A%0A_Por favor, guárdalo y preséntalo en la puerta._`;
+            
+            // Verificamos que el número tenga el formato correcto (ej: 519...)
+            const linkWA = `https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`;
+            window.open(linkWA, '_blank');
+        }, 800);
+
+    } catch (err) {
+        console.error("Error en proceso:", err);
+        alert("Hubo un problema al generar el ticket. Inténtalo de nuevo.");
     }
+}
 
     window.onload = async () => {
         document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotorLogueado.toUpperCase();
