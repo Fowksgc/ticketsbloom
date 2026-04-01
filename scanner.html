@@ -10,134 +10,80 @@
 
     <style>
         :root { 
-            --bg: #050509; 
-            --accent: #00f2fe; 
-            --card: #10101e; 
-            --success: #00ff88;
-            --error: #ff4d4d;
+            --bg: #050509; --accent: #00f2fe; --card: #10101e; 
+            --success: #00ff88; --error: #ff4d4d;
         }
 
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            background: var(--bg); 
-            color: white; 
-            margin: 0; 
-            text-align: center; 
-            overflow: hidden; 
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            font-family: -apple-system, sans-serif; background: var(--bg); 
+            color: white; margin: 0; text-align: center; overflow: hidden; 
+            display: flex; flex-direction: column; height: 100vh;
         }
         
         #container-cam { 
-            position: relative; 
-            width: 100%; 
-            height: 70vh; 
-            background: #000; 
-            overflow: hidden; 
-            display: flex;
-            align-items: center; 
-            justify-content: center;
+            position: relative; width: 100%; height: 60vh; background: #000; 
+            display: flex; align-items: center; justify-content: center;
             border-bottom: 2px solid #1f1f33;
         }
 
-        video { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            display: block; 
-        }
+        video { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Mira del Scanner */
         .scanner-overlay { 
-            position: absolute; 
-            width: 240px; 
-            height: 240px; 
-            border: 2px solid var(--accent); 
-            border-radius: 30px; 
-            box-shadow: 0 0 0 4000px rgba(0,0,0,0.7); 
-            pointer-events: none; 
-            z-index: 5;
+            position: absolute; width: 200px; height: 200px; 
+            border: 2px solid var(--accent); border-radius: 30px; 
+            box-shadow: 0 0 0 4000px rgba(0,0,0,0.7); z-index: 5;
         }
 
+        /* Línea de escaneo animada */
         .scanner-line {
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: var(--accent);
-            top: 0;
-            left: 0;
-            box-shadow: 0 0 15px var(--accent);
+            position: absolute; width: 100%; height: 2px;
+            background: var(--accent); top: 0; box-shadow: 0 0 15px var(--accent);
             animation: scanMove 2s infinite linear;
         }
 
-        @keyframes scanMove {
-            0% { top: 0%; }
-            50% { top: 100%; }
-            100% { top: 0%; }
-        }
+        @keyframes scanMove { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
         
         .footer-controls {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px;
         }
 
-        .btn-init { 
-            background: var(--accent); 
-            color: #000; 
-            border: none; 
-            padding: 20px; 
-            width: 80%; 
-            max-width: 300px;
-            border-radius: 20px; 
-            font-weight: 900; 
-            font-size: 16px; 
-            letter-spacing: 1px; 
-            text-transform: uppercase;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0,242,254,0.3);
+        .btn-main { 
+            background: var(--accent); color: #000; border: none; 
+            padding: 18px; width: 85%; max-width: 300px;
+            border-radius: 18px; font-weight: 900; font-size: 15px; 
+            text-transform: uppercase; cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0,242,254,0.2);
         }
 
-        /* Caja de Resultados */
+        #btn-next { display: none; background: #fff; margin-top: 10px; }
+
         #result-box { 
-            position: fixed; 
-            bottom: 30px; 
-            left: 5%; 
-            width: 90%; 
-            padding: 30px 20px; 
-            border-radius: 30px; 
-            background: var(--card); 
-            display: none; 
-            z-index: 100; 
-            border: 2px solid #333;
-            animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: fixed; bottom: 20px; left: 5%; width: 90%; 
+            padding: 25px 15px; border-radius: 25px; background: var(--card); 
+            display: none; z-index: 100; border: 2px solid #333;
+            animation: slideUp 0.3s ease-out;
         }
 
-        @keyframes slideUp { 
-            from { transform: translateY(150px); opacity: 0; } 
-            to { transform: translateY(0); opacity: 1; } 
-        }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .res-status { font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
-        .res-name { font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
-        .res-detail { font-size: 14px; font-weight: 600; opacity: 0.9; }
-
+        .res-status { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
+        .res-name { font-size: 22px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
+        .res-detail { font-size: 13px; font-weight: 600; opacity: 0.9; }
     </style>
 </head>
 <body>
 
     <div id="container-cam">
         <video id="video" autoplay muted playsinline></video>
-        <div class="scanner-overlay">
+        <div id="overlay" class="scanner-overlay">
             <div class="scanner-line"></div>
         </div>
     </div>
 
     <div class="footer-controls">
-        <button id="btn-start" class="btn-init" onclick="initCamara()">ACTIVAR CÁMARA</button>
+        <button id="btn-start" class="btn-main" onclick="initCamara()">ACTIVAR CÁMARA</button>
+        <button id="btn-next" class="btn-main" onclick="resetScanner()">ESCANEAR SIGUIENTE</button>
     </div>
 
     <div id="result-box">
@@ -147,7 +93,6 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN SUPABASE
         const SUPABASE_URL = 'https://nakrilawyrppxvjnrbks.supabase.co/'; 
         const SUPABASE_KEY = 'sb_publishable_JJGnQbTeKrQ8m02e76pZpg_nJ9lGp0m';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -165,10 +110,7 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
                 });
-                
                 video.srcObject = stream;
-                video.setAttribute("playsinline", true);
-                
                 video.onloadedmetadata = () => {
                     video.play();
                     scanning = true;
@@ -176,7 +118,7 @@
                     requestAnimationFrame(tick);
                 };
             } catch (err) {
-                alert("ERROR: Para escanear, usa HTTPS y permite el acceso a la cámara.");
+                alert("Error de cámara. Usa HTTPS.");
             }
         }
 
@@ -185,12 +127,11 @@
                 canvasElement.height = video.videoHeight;
                 canvasElement.width = video.videoWidth;
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-                
                 const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
                 const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
                 if (code) {
-                    scanning = false;
+                    scanning = false; // Detiene el escaneo al detectar uno
                     validarTicket(code.data);
                 }
             }
@@ -200,72 +141,54 @@
         async function validarTicket(codigo) {
             const box = document.getElementById('result-box');
             const nameTxt = document.getElementById('res-name');
-            const statusTxt = document.getElementById('res-status');
-            const typeTxt = document.getElementById('res-type');
+            const overlay = document.getElementById('overlay');
 
             box.style.display = 'block';
+            overlay.style.display = 'none'; // Oculta la mira para indicar que se detuvo
             nameTxt.innerText = "VERIFICANDO...";
-            renderUI(null, "SCANNING", "Buscando en base de datos...");
 
             try {
-                // 1. Consultar ticket
-                const { data, error } = await _supabase
-                    .from('tickets')
-                    .select('*')
-                    .eq('codigo_qr', codigo)
-                    .single();
+                const { data, error } = await _supabase.from('tickets').select('*').eq('codigo_qr', codigo).single();
 
                 if (error || !data) {
-                    renderUI(false, "INVÁLIDO", "EL TICKET NO EXISTE");
-                    nameTxt.innerText = "ERROR QR";
+                    renderUI(false, "INVÁLIDO", "TICKET NO EXISTE");
+                    nameTxt.innerText = "CÓDIGO DESCONOCIDO";
                 } 
                 else if (data.usado) {
-                    renderUI(false, "DENEGADO", "YA INGRESÓ AL EVENTO");
+                    renderUI(false, "DENEGADO", "YA INGRESÓ ANTERIORMENTE");
                     nameTxt.innerText = data.nombre_cliente;
                 } 
                 else {
-                    // 2. Marcar como usado
-                    await _supabase
-                        .from('tickets')
-                        .update({ usado: true })
-                        .eq('codigo_qr', codigo);
-
-                    renderUI(true, "PERMITIDO", data.tipo_entrada);
+                    await _supabase.from('tickets').update({ usado: true }).eq('codigo_qr', codigo);
+                    renderUI(true, "ACCESO PERMITIDO", data.tipo_entrada);
                     nameTxt.innerText = data.nombre_cliente;
                 }
             } catch (e) {
-                renderUI(false, "ERROR", "FALLA DE CONEXIÓN");
+                renderUI(false, "ERROR", "REVISA TU INTERNET");
             }
 
-            // REINICIO AUTOMÁTICO (3.5 segundos)
-            setTimeout(() => {
-                box.style.display = 'none';
-                scanning = true;
-                requestAnimationFrame(tick);
-            }, 3500);
+            // Mostramos el botón para escanear otro
+            document.getElementById('btn-next').style.display = 'block';
+        }
+
+        function resetScanner() {
+            // Limpiamos UI para el siguiente
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('result-box').style.display = 'none';
+            document.getElementById('overlay').style.display = 'block';
+            
+            // Reactivamos el bucle de escaneo
+            scanning = true;
+            requestAnimationFrame(tick);
         }
 
         function renderUI(ok, status, detail) {
             const box = document.getElementById('result-box');
-            
-            if (ok === null) { // Estado Cargando
-                box.style.background = "#10101e";
-                box.style.color = "white";
-                box.style.borderColor = "#333";
-            } else if (ok) { // Éxito
-                box.style.background = "#00ff88";
-                box.style.color = "#000";
-                box.style.borderColor = "#00ff88";
-                if (navigator.vibrate) navigator.vibrate(200);
-            } else { // Fallo
-                box.style.background = "#ff4d4d";
-                box.style.color = "#fff";
-                box.style.borderColor = "#ff4d4d";
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-            }
-
+            box.style.background = ok ? "#00ff88" : "#ff4d4d";
+            box.style.color = ok ? "#000" : "#fff";
             document.getElementById('res-status').innerText = status;
             document.getElementById('res-type').innerText = detail;
+            if (navigator.vibrate) ok ? navigator.vibrate(200) : navigator.vibrate([100, 50, 100]);
         }
     </script>
 </body>
