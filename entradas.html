@@ -357,7 +357,7 @@ async function enviarTicketWhatsApp() {
     try {
         // --- NUEVA ESPERA PARA EL QR ---
         // Detenemos la ejecución 500ms para asegurar que el QR se dibuje en el DOM
-        await new Promise(resolve => setTimeout(resolve, 500)); 
+        await new Promise(resolve => setTimeout(resolve, 800)); 
         // -------------------------------
 
         const canvas = await html2canvas(elementoTicket, { 
