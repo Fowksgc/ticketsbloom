@@ -20,7 +20,23 @@
             height: 100dvh; overflow: hidden;
             padding-top: env(safe-area-inset-top);
         }
-        
+
+        /* CAPA DE SEGURIDAD */
+        #auth-overlay {
+            position: fixed; inset: 0; background: var(--bg);
+            z-index: 1000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+
+        .input-auth {
+            background: #111; border: 2px solid var(--accent);
+            color: var(--accent); padding: 15px; width: 80%;
+            max-width: 250px; border-radius: 12px; font-size: 24px;
+            text-align: center; margin-bottom: 20px; outline: none;
+            letter-spacing: 5px;
+        }
+
+        /* ESTRUCTURA SCANNER */
         #container-cam { 
             position: relative; width: 100%; height: 35vh; background: #000; 
             display: flex; align-items: center; justify-content: center;
@@ -36,10 +52,7 @@
             top: 50%; left: 50%; transform: translate(-50%, -50%);
         }
 
-        /* CONTENEDOR DE INFORMACIÓN MAXIMIZADO */
-        #result-info { 
-            flex: 1; display: flex; align-items: center; justify-content: center; padding: 15px;
-        }
+        #result-info { flex: 1; display: flex; align-items: center; justify-content: center; padding: 15px; }
 
         .card-asistente {
             width: 95%; height: 90%; border-radius: 28px;
@@ -47,17 +60,11 @@
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             text-align: center; transition: all 0.3s ease;
-            box-sizing: border-box;
         }
 
-        /* ESTADO: Grande y llamativo */
-        .res-status { 
-            font-size: 42px; font-weight: 900; letter-spacing: -1px; 
-            text-transform: uppercase; margin-bottom: 5px; line-height: 1;
-        }
-
-        .res-name { font-size: 22px; font-weight: 700; color: #fff; margin-top: 10px; text-transform: uppercase; }
-        .res-type { font-size: 16px; font-weight: 500; opacity: 0.8; margin-top: 5px; }
+        .res-status { font-size: 42px; font-weight: 900; text-transform: uppercase; line-height: 1; }
+        .res-name { font-size: 22px; font-weight: 700; margin-top: 10px; text-transform: uppercase; }
+        .res-type { font-size: 16px; opacity: 0.8; margin-top: 5px; }
 
         .footer-action {
             padding: 10px 20px calc(15px + env(safe-area-inset-bottom)) 20px;
@@ -71,13 +78,19 @@
             text-transform: uppercase; cursor: pointer;
         }
 
-        #btn-next { display: none; background: #fff; color: #000; }
-
+        #btn-next { display: none; background: #fff; }
         .pulse { animation: pulse-ani 0.4s infinite alternate; }
         @keyframes pulse-ani { from { transform: scale(1); } to { transform: scale(1.04); } }
     </style>
 </head>
 <body>
+
+    <div id="auth-overlay">
+        <h2 style="color: var(--accent); margin-bottom: 10px;">BLOOM ACCESS</h2>
+        <p style="opacity: 0.6; margin-bottom: 20px;">Ingresa el PIN de seguridad</p>
+        <input type="password" id="pin-input" class="input-auth" placeholder="****" inputmode="numeric">
+        <button class="btn-main" onclick="checkAuth()">INGRESAR AL SCANNER</button>
+    </div>
 
     <div id="container-cam">
         <video id="video" autoplay muted playsinline></video>
@@ -88,7 +101,7 @@
         <div class="card-asistente" id="card-ui">
             <span id="res-status" class="res-status" style="color:#333;">LISTO</span>
             <div id="res-name" class="res-name">Esperando ticket</div>
-            <div id="res-type" class="res-type">Scanner Oficial</div>
+            <div id="res-type" class="res-type">Seguridad Activa</div>
         </div>
     </div>
 
@@ -98,11 +111,28 @@
     </div>
 
     <script>
+        // CONFIGURACIÓN
+        const PIN_CORRECTO = "2026"; // <--- CAMBIA TU PIN AQUÍ
         const SUPABASE_URL = 'https://nakrilawyrppxvjnrbks.supabase.co/'; 
         const SUPABASE_KEY = 'sb_publishable_JJGnQbTeKrQ8m02e76pZpg_nJ9lGp0m';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let video, canvasElement, canvas, scanning = false;
+
+        // Comprobar si ya se autenticó antes
+        if(localStorage.getItem('scanner_auth') === 'true') {
+            document.getElementById('auth-overlay').style.display = 'none';
+        }
+
+        function checkAuth() {
+            const pin = document.getElementById('pin-input').value;
+            if(pin === PIN_CORRECTO) {
+                localStorage.setItem('scanner_auth', 'true');
+                document.getElementById('auth-overlay').style.display = 'none';
+            } else {
+                alert("PIN INCORRECTO");
+            }
+        }
 
         document.addEventListener("DOMContentLoaded", () => {
             video = document.getElementById("video");
@@ -196,7 +226,6 @@
             const nameTxt = document.getElementById('res-name');
             const color = ok ? "#00ff88" : "#ff4d4d"; 
             
-            // CAMBIO TOTAL DE COLOR PARA MÁXIMA VISIBILIDAD
             card.style.background = color;
             card.style.borderColor = color;
             card.classList.add('pulse');
