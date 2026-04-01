@@ -355,56 +355,36 @@ async function enviarTicketWhatsApp() {
     if (!elementoTicket || !datosTicket) return alert("Error: Datos insuficientes");
 
     try {
-        // --- PASO 1: FORZAR CONVERSIÓN DE QR A IMAGEN ---
-        // Buscamos el canvas que genera la librería QRCode
-        const qrCanvas = elementoTicket.querySelector('canvas');
-        if (qrCanvas) {
-            // Creamos una imagen temporal con el contenido del canvas del QR
-            const qrImagenData = qrCanvas.toDataURL("image/png");
-            const imgTemp = document.createElement('img');
-            imgTemp.src = qrImagenData;
-            imgTemp.style.width = qrCanvas.style.width || "200px";
-            imgTemp.style.height = qrCanvas.style.height || "200px";
-            
-            // Reemplazamos el canvas por la imagen (html2canvas lee mejor imágenes)
-            qrCanvas.parentNode.replaceChild(imgTemp, qrCanvas);
-        }
+        // --- NUEVA ESPERA PARA EL QR ---
+        // Detenemos la ejecución 500ms para asegurar que el QR se dibuje en el DOM
+        await new Promise(resolve => setTimeout(resolve, 500)); 
+        // -------------------------------
 
-        // Esperamos un respiro para que el navegador asimile el cambio
-        await new Promise(resolve => requestAnimationFrame(resolve));
-
-        // --- PASO 2: CAPTURA NORMAL ---
         const canvas = await html2canvas(elementoTicket, { 
             scale: 3, 
             backgroundColor: "#050509", 
-            useCORS: true,
-            allowTaint: true, // Permite capturar elementos "sucios" como el QR
-            logging: false 
+            useCORS: true 
         });
 
         const imgData = canvas.toDataURL('image/png');
-        const pdfWidth = canvas.width / 3;
-        const pdfHeight = canvas.height / 3;
-        
         const pdf = new jsPDF({ 
             orientation: 'portrait', 
             unit: 'px', 
-            format: [pdfWidth, pdfHeight] 
+            format: [canvas.width / 3, canvas.height / 3] 
         });
 
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
         
         const nombreArchivo = `TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
         pdf.save(nombreArchivo);
 
-        // --- PASO 3: WHATSAPP ---
         setTimeout(() => {
             const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket PDF descargado.*`;
             window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
         }, 1000);
 
     } catch (err) {
-        console.error("Error:", err);
+        console.error(err);
         alert("Error al generar PDF");
     }
 }
