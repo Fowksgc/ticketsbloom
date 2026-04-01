@@ -16,80 +16,79 @@
 
         body { 
             font-family: -apple-system, sans-serif; background: var(--bg); 
-            color: white; margin: 0; text-align: center; overflow: hidden; 
-            display: flex; flex-direction: column; height: 100vh;
+            color: white; margin: 0; padding: 0; display: flex; flex-direction: column; 
+            height: 100vh; overflow: hidden;
         }
         
+        /* 1. LA CÁMARA (Ocupa la parte superior) */
         #container-cam { 
-            position: relative; width: 100%; height: 60vh; background: #000; 
+            position: relative; width: 100%; height: 50vh; background: #000; 
             display: flex; align-items: center; justify-content: center;
-            border-bottom: 2px solid #1f1f33;
+            border-bottom: 1px solid #1f1f33;
         }
 
         video { width: 100%; height: 100%; object-fit: cover; }
 
         .scanner-overlay { 
-            position: absolute; width: 200px; height: 200px; 
-            border: 2px solid var(--accent); border-radius: 30px; 
-            box-shadow: 0 0 0 4000px rgba(0,0,0,0.7); z-index: 5;
+            position: absolute; width: 180px; height: 180px; 
+            border: 2px dashed rgba(0, 242, 254, 0.5); border-radius: 20px; 
+            box-shadow: 0 0 0 4000px rgba(0,0,0,0.6); z-index: 5;
         }
 
-        /* Línea de escaneo animada */
-        .scanner-line {
-            position: absolute; width: 100%; height: 2px;
-            background: var(--accent); top: 0; box-shadow: 0 0 15px var(--accent);
-            animation: scanMove 2s infinite linear;
+        /* 2. INFORMACIÓN DEL ÚLTIMO ASISTENTE */
+        #result-info { 
+            flex: 1; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center;
+            padding: 20px; background: var(--bg);
         }
 
-        @keyframes scanMove { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
-        
-        .footer-controls {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; padding: 20px;
+        .card-asistente {
+            width: 90%; padding: 20px; border-radius: 20px;
+            background: var(--card); border: 1px solid #222;
+            min-height: 120px; display: flex; flex-direction: column;
+            justify-content: center;
+        }
+
+        .res-status { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; color: #888; }
+        .res-name { font-size: 20px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; color: #fff; }
+        .res-type { font-size: 14px; font-weight: 600; color: var(--accent); }
+
+        /* 3. BOTÓN DE ESCANEAR DE NUEVO */
+        .footer-action {
+            padding: 20px; display: flex; justify-content: center;
+            background: var(--bg);
         }
 
         .btn-main { 
             background: var(--accent); color: #000; border: none; 
-            padding: 18px; width: 85%; max-width: 300px;
-            border-radius: 18px; font-weight: 900; font-size: 15px; 
+            padding: 18px; width: 90%; max-width: 350px;
+            border-radius: 15px; font-weight: 900; font-size: 14px; 
             text-transform: uppercase; cursor: pointer;
-            box-shadow: 0 10px 25px rgba(0,242,254,0.2);
+            box-shadow: 0 8px 20px rgba(0,242,254,0.2);
+            transition: 0.3s;
         }
 
-        #btn-next { display: none; background: #fff; margin-top: 10px; }
-
-        #result-box { 
-            position: fixed; bottom: 20px; left: 5%; width: 90%; 
-            padding: 25px 15px; border-radius: 25px; background: var(--card); 
-            display: none; z-index: 100; border: 2px solid #333;
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .res-status { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
-        .res-name { font-size: 22px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
-        .res-detail { font-size: 13px; font-weight: 600; opacity: 0.9; }
+        #btn-next { display: none; background: #fff; color: #000; }
     </style>
 </head>
 <body>
 
     <div id="container-cam">
         <video id="video" autoplay muted playsinline></video>
-        <div id="overlay" class="scanner-overlay">
-            <div class="scanner-line"></div>
+        <div id="overlay" class="scanner-overlay"></div>
+    </div>
+
+    <div id="result-info">
+        <div class="card-asistente" id="card-ui">
+            <div id="res-status" class="res-status">Esperando escaneo...</div>
+            <div id="res-name" class="res-name">---</div>
+            <div id="res-type" class="res-type">---</div>
         </div>
     </div>
 
-    <div class="footer-controls">
+    <div class="footer-action">
         <button id="btn-start" class="btn-main" onclick="initCamara()">ACTIVAR CÁMARA</button>
-        <button id="btn-next" class="btn-main" onclick="resetScanner()">ESCANEAR SIGUIENTE</button>
-    </div>
-
-    <div id="result-box">
-        <div id="res-status" class="res-status">Estado</div>
-        <div id="res-name" class="res-name">---</div>
-        <div id="res-type" class="res-detail">---</div>
+        <button id="btn-next" class="btn-main" onclick="resetScanner()">ESCANEAR DE NUEVO</button>
     </div>
 
     <script>
@@ -118,7 +117,7 @@
                     requestAnimationFrame(tick);
                 };
             } catch (err) {
-                alert("Error de cámara. Usa HTTPS.");
+                alert("Activa permisos de cámara.");
             }
         }
 
@@ -131,7 +130,7 @@
                 const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
                 if (code) {
-                    scanning = false; // Detiene el escaneo al detectar uno
+                    scanning = false;
                     validarTicket(code.data);
                 }
             }
@@ -139,12 +138,11 @@
         }
 
         async function validarTicket(codigo) {
-            const box = document.getElementById('result-box');
+            const card = document.getElementById('card-ui');
             const nameTxt = document.getElementById('res-name');
             const overlay = document.getElementById('overlay');
 
-            box.style.display = 'block';
-            overlay.style.display = 'none'; // Oculta la mira para indicar que se detuvo
+            overlay.style.borderColor = "transparent";
             nameTxt.innerText = "VERIFICANDO...";
 
             try {
@@ -152,41 +150,35 @@
 
                 if (error || !data) {
                     renderUI(false, "INVÁLIDO", "TICKET NO EXISTE");
-                    nameTxt.innerText = "CÓDIGO DESCONOCIDO";
+                    nameTxt.innerText = "ERROR QR";
                 } 
                 else if (data.usado) {
-                    renderUI(false, "DENEGADO", "YA INGRESÓ ANTERIORMENTE");
+                    renderUI(false, "DENEGADO", "YA INGRESÓ AL EVENTO");
                     nameTxt.innerText = data.nombre_cliente;
                 } 
                 else {
                     await _supabase.from('tickets').update({ usado: true }).eq('codigo_qr', codigo);
-                    renderUI(true, "ACCESO PERMITIDO", data.tipo_entrada);
+                    renderUI(true, "PERMITIDO", data.tipo_entrada);
                     nameTxt.innerText = data.nombre_cliente;
                 }
             } catch (e) {
-                renderUI(false, "ERROR", "REVISA TU INTERNET");
+                renderUI(false, "ERROR", "REVISA CONEXIÓN");
             }
-
-            // Mostramos el botón para escanear otro
             document.getElementById('btn-next').style.display = 'block';
         }
 
         function resetScanner() {
-            // Limpiamos UI para el siguiente
             document.getElementById('btn-next').style.display = 'none';
-            document.getElementById('result-box').style.display = 'none';
-            document.getElementById('overlay').style.display = 'block';
-            
-            // Reactivamos el bucle de escaneo
+            document.getElementById('overlay').style.borderColor = "rgba(0, 242, 254, 0.5)";
             scanning = true;
             requestAnimationFrame(tick);
         }
 
         function renderUI(ok, status, detail) {
-            const box = document.getElementById('result-box');
-            box.style.background = ok ? "#00ff88" : "#ff4d4d";
-            box.style.color = ok ? "#000" : "#fff";
+            const card = document.getElementById('card-ui');
+            card.style.borderColor = ok ? "#00ff88" : "#ff4d4d";
             document.getElementById('res-status').innerText = status;
+            document.getElementById('res-status').style.color = ok ? "#00ff88" : "#ff4d4d";
             document.getElementById('res-type').innerText = detail;
             if (navigator.vibrate) ok ? navigator.vibrate(200) : navigator.vibrate([100, 50, 100]);
         }
