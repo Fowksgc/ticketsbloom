@@ -20,7 +20,6 @@
             height: 100vh; overflow: hidden;
         }
         
-        /* 1. CÁMARA CENTRADA */
         #container-cam { 
             position: relative; width: 100%; height: 45vh; background: #000; 
             display: flex; align-items: center; justify-content: center;
@@ -33,15 +32,12 @@
             position: absolute; width: 200px; height: 200px; 
             border: 3px solid var(--accent); border-radius: 25px; 
             box-shadow: 0 0 0 4000px rgba(0,0,0,0.65); z-index: 5;
-            /* Asegura centrado absoluto */
             top: 50%; left: 50%; transform: translate(-50%, -50%);
         }
 
-        /* 2. INFO DEL ASISTENTE - MÁS LLAMATIVO */
         #result-info { 
             flex: 1; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center;
-            padding: 20px;
+            align-items: center; justify-content: center; padding: 20px;
         }
 
         .card-asistente {
@@ -52,17 +48,14 @@
 
         .res-status { 
             font-size: 28px; font-weight: 900; letter-spacing: 1px; 
-            text-transform: uppercase; margin-bottom: 10px; 
-            display: block;
+            text-transform: uppercase; margin-bottom: 10px; display: block;
         }
 
         .res-name { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 5px; }
         .res-type { font-size: 16px; font-weight: 500; opacity: 0.8; }
 
-        /* 3. BOTÓN CON VIDA */
         .footer-action {
-            padding: 30px 20px; display: flex; justify-content: center;
-            background: var(--bg);
+            padding: 30px 20px; display: flex; justify-content: center; background: var(--bg);
         }
 
         .btn-main { 
@@ -70,25 +63,15 @@
             padding: 20px; width: 100%; max-width: 350px;
             border-radius: 20px; font-weight: 900; font-size: 16px; 
             text-transform: uppercase; cursor: pointer;
-            box-shadow: 0 10px 0px #00a8b1; /* Sombra sólida para que no parezca plano */
+            box-shadow: 0 8px 0px #00a8b1;
             transition: all 0.1s;
-            display: block;
         }
 
-        .btn-main:active {
-            transform: translateY(4px);
-            box-shadow: 0 4px 0px #00a8b1;
-        }
+        .btn-main:active { transform: translateY(4px); box-shadow: 0 4px 0px #00a8b1; }
 
-        #btn-next { 
-            display: none; 
-            background: #fff; 
-            box-shadow: 0 10px 0px #bbb; 
-        }
-        
+        #btn-next { display: none; background: #fff; box-shadow: 0 8px 0px #bbb; }
         #btn-next:active { box-shadow: 0 4px 0px #bbb; }
 
-        /* Animación para el mensaje */
         .pulse { animation: pulse-ani 0.5s infinite alternate; }
         @keyframes pulse-ani { from { transform: scale(1); } to { transform: scale(1.05); } }
     </style>
@@ -135,16 +118,17 @@
                 video.onloadedmetadata = () => {
                     video.play();
                     scanning = true;
-                    document.getElementById('btn-start').style.display = 'none';
+                    // Forzamos la desaparición del botón
+                    document.getElementById('btn-start').style.setProperty('display', 'none', 'important');
                     requestAnimationFrame(tick);
                 };
             } catch (err) {
-                alert("Permite el acceso a la cámara.");
+                alert("Error: Activa los permisos de cámara.");
             }
         }
 
         function tick() {
-            if (video.readyState === video.HAVE_ENOUGH_DATA && scanning) {
+            if (video && video.readyState === video.HAVE_ENOUGH_DATA && scanning) {
                 canvasElement.height = video.videoHeight;
                 canvasElement.width = video.videoWidth;
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
@@ -160,7 +144,6 @@
         }
 
         async function validarTicket(codigo) {
-            const card = document.getElementById('card-ui');
             const statusTxt = document.getElementById('res-status');
             const nameTxt = document.getElementById('res-name');
             const overlay = document.getElementById('overlay');
@@ -177,7 +160,7 @@
                     nameTxt.innerText = "ERROR DE LECTURA";
                 } 
                 else if (data.usado) {
-                    renderUI(false, "DENEGADO", "YA ENTRÓ");
+                    renderUI(false, "DENEGADO", "YA ENTRÓ AL EVENTO");
                     nameTxt.innerText = data.nombre_cliente;
                 } 
                 else {
@@ -206,12 +189,13 @@
         function renderUI(ok, status, detail) {
             const card = document.getElementById('card-ui');
             const statusTxt = document.getElementById('res-status');
+            const color = ok ? "#00ff88" : "#ff4d4d"; // Colores fijos en JS para evitar errores
             
-            card.style.borderColor = ok ? var(--success) : var(--error);
+            card.style.borderColor = color;
             card.classList.add('pulse');
             
             statusTxt.innerText = status;
-            statusTxt.style.color = ok ? "var(--success)" : "var(--error)";
+            statusTxt.style.color = color;
             
             document.getElementById('res-type').innerText = detail;
             if (navigator.vibrate) ok ? navigator.vibrate(200) : navigator.vibrate([100, 50, 100]);
