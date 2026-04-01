@@ -355,23 +355,30 @@ async function enviarTicketWhatsApp() {
     if (!elementoTicket || !datosTicket) return alert("Error: Datos insuficientes");
 
     try {
-        // --- CORRECCIÓN CRÍTICA PARA EL QR BLANCO ---
-        // Buscamos el canvas o la imagen que genera la librería de QR dentro de tu div
-        const qrElement = elementoTicket.querySelector('canvas, img');
-        
-        // Si el QR aún no existe o no se ha dibujado, esperamos un momento
-        if (!qrElement) {
-            await new Promise(resolve => setTimeout(resolve, 500)); 
+        // --- PASO 1: FORZAR CONVERSIÓN DE QR A IMAGEN ---
+        // Buscamos el canvas que genera la librería QRCode
+        const qrCanvas = elementoTicket.querySelector('canvas');
+        if (qrCanvas) {
+            // Creamos una imagen temporal con el contenido del canvas del QR
+            const qrImagenData = qrCanvas.toDataURL("image/png");
+            const imgTemp = document.createElement('img');
+            imgTemp.src = qrImagenData;
+            imgTemp.style.width = qrCanvas.style.width || "200px";
+            imgTemp.style.height = qrCanvas.style.height || "200px";
+            
+            // Reemplazamos el canvas por la imagen (html2canvas lee mejor imágenes)
+            qrCanvas.parentNode.replaceChild(imgTemp, qrCanvas);
         }
-        
-        // Pequeño delay extra para asegurar que el renderizado de la librería terminó
-        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 100)));
-        // --------------------------------------------
 
+        // Esperamos un respiro para que el navegador asimile el cambio
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        // --- PASO 2: CAPTURA NORMAL ---
         const canvas = await html2canvas(elementoTicket, { 
             scale: 3, 
             backgroundColor: "#050509", 
             useCORS: true,
+            allowTaint: true, // Permite capturar elementos "sucios" como el QR
             logging: false 
         });
 
@@ -390,6 +397,7 @@ async function enviarTicketWhatsApp() {
         const nombreArchivo = `TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
         pdf.save(nombreArchivo);
 
+        // --- PASO 3: WHATSAPP ---
         setTimeout(() => {
             const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket PDF descargado.*`;
             window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
