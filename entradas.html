@@ -476,11 +476,6 @@ async function enviarTicketWhatsApp() {
         const nombreArchivo = `TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
         pdf.save(nombreArchivo);
 
-        // Notificar y abrir WhatsApp
-        setTimeout(() => {
-            const mensaje = `¡Hola *${datosTicket.nombre}*! 👋%0A%0AConfirmamos tu entrada para *NEON PARTY*.%0A%0A✅ *Ticket PDF descargado.*%0A%0A*Adjúntalo aquí abajo.* 👇`;
-            window.open(`https://wa.me/${datosTicket.whatsapp}?text=${mensaje}`, '_blank');
-        }, 1000);
 
     } catch (err) {
         console.error("Error crítico:", err);
