@@ -57,30 +57,47 @@
     gap: 5px;
 }
 
-/* ESTILO GOLD PREMIUM */
-.btn-precio.gold-style {
-    background: linear-gradient(145deg, #2a2a0a, #10101e);
-    border: 2px solid #FFD700;
-    color: #FFD700;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+/* Estilo base para todos los boxes */
+.btn-box {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
 }
 
-.btn-precio.gold-style:hover {
-    background: #FFD700;
-    color: #000;
-    box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
-}
-
-.btn-precio.gold-style b {
-    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
-}
-
-/* Estado deshabilitado */
-.btn-precio.disabled {
-    opacity: 0.3;
-    filter: grayscale(1);
-    cursor: not-allowed;
-}
+    /* BOXES NORMALES (S/ 700) - Color Cyan/Neon */
+    .btn-box.box-normal {
+        background: rgba(0, 242, 254, 0.1);
+        border-color: #00f2fe;
+        color: #00f2fe;
+    }
+    
+    /* BOXES GOLD (S/ 1400) - Color Dorado VIP */
+    .btn-box.box-gold {
+        background: rgba(255, 215, 0, 0.15);
+        border-color: #FFD700;
+        color: #FFD700;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    
+    /* Estado OCUPADO - Gris oscuro */
+    .btn-box.ocupado {
+        background: #1a1a1a !important;
+        border-color: #333 !important;
+        color: #444 !important;
+        cursor: not-allowed;
+        box-shadow: none !important;
+    }
+    
+    /* Efecto al presionar */
+    .btn-box:active:not(.ocupado) {
+        transform: scale(0.9);
+    }
 
     input {
       width: 100%; padding: 16px; background: var(--input-bg); border: 1px solid var(--border);
@@ -251,21 +268,25 @@ async function cargarPrecios() {
     data.forEach(p => {
         const btn = document.createElement('div');
         
-        // 1. Lógica de clases: Si es GOLD o BOX, le damos el estilo dorado
-        const esGold = p.tipo_entrada.toUpperCase().includes("GOLD") || p.tipo_entrada.toUpperCase().includes("BOX");
-        btn.className = 'btn-precio' + (p.activo ? '' : ' disabled') + (esGold ? ' gold-style' : '');
+        // 1. Aplicamos clase disabled si no está activo
+        btn.className = 'btn-precio' + (p.activo ? '' : ' disabled');
 
+        // 2. Lógica para ocultar precio si es BOX
         const esBox = p.tipo_entrada.toUpperCase().includes("BOX");
         
         if (esBox) {
-            btn.innerHTML = `<b>${p.tipo_entrada}</b><span style="font-size:12px; opacity:0.8;">Seleccionar box</span>`;
+            // No mostramos p.precio aquí
+            btn.innerHTML = `<b>${p.tipo_entrada}</b><span style="font-size:12px; opacity:0.6;">Seleccionar box</span>`;
         } else {
+            // Mostramos el precio normal de la tabla precios
             btn.innerHTML = `<b>${p.tipo_entrada}</b><span>S/ ${p.precio}</span>`;
         }
 
+        // 3. Lógica de click
         if (p.activo) {
             btn.onclick = () => {
                 entradaSeleccionada = p.tipo_entrada;
+                
                 if (esBox) {
                     precioSeleccionado = null; 
                     generarGridBoxes();
@@ -292,34 +313,42 @@ async function cargarPrecios() {
         if(el) el.classList.add('active');
     }
 
-    async function generarGridBoxes() {
-        const grid = document.getElementById('grid-boxes');
-        grid.innerHTML = "<p style='grid-column: span 5; color:#666; text-align:center;'>Cargando mapa...</p>";
+async function generarGridBoxes() {
+    const grid = document.getElementById('grid-boxes');
+    grid.innerHTML = "<p style='grid-column: span 5; color:#666; text-align:center;'>Cargando mapa...</p>";
+    
+    const { data: listaBoxes, error } = await _supabase
+        .from('boxes')
+        .select('*')
+        .order('numero_box', { ascending: true });
+
+    if (error) return alert("Error al cargar boxes");
+
+    grid.innerHTML = "";
+    
+    listaBoxes.forEach(box => {
+        const btn = document.createElement('div');
         
-        const { data: listaBoxes, error } = await _supabase
-            .from('boxes')
-            .select('*')
-            .order('numero_box', { ascending: true });
+        // --- LÓGICA DE CLASES DINÁMICAS ---
+        let statusClass = box.estado === 'ocupado' ? ' ocupado' : '';
+        // Si el precio es 1400 le ponemos la clase 'gold', si no, 'normal'
+        let priceClass = (box.precio >= 1400) ? ' box-gold' : ' box-normal';
+        
+        btn.className = 'btn-box' + statusClass + priceClass;
+        btn.innerText = box.numero_box;
 
-        if (error) return alert("Error al cargar boxes");
-
-        grid.innerHTML = "";
-        listaBoxes.forEach(box => {
-            const btn = document.createElement('div');
-            btn.className = 'btn-box' + (box.estado === 'ocupado' ? ' ocupado' : '');
-            btn.innerText = box.numero_box;
-
-            if (box.estado !== 'ocupado') {
-                btn.onclick = () => {
-                    boxSeleccionado = box.numero_box;
-                    precioSeleccionado = box.precio; 
-                    document.getElementById('label-seleccionada').innerText = `${entradaSeleccionada} - BOX ${box.numero_box} - S/ ${precioSeleccionado}`;
-                    irAPaso(2);
-                };
-            }
-            grid.appendChild(btn);
-        });
-    }
+        if (box.estado !== 'ocupado') {
+            btn.onclick = () => {
+                boxSeleccionado = box.numero_box;
+                precioSeleccionado = box.precio; 
+                document.getElementById('label-seleccionada').innerText = `${entradaSeleccionada} - BOX ${box.numero_box} - S/ ${precioSeleccionado}`;
+                irAPaso(2);
+            };
+        }
+        
+        grid.appendChild(btn);
+    });
+}
 
     async function generarVenta() {
         const whatsappInput = document.getElementById('whatsapp-cliente').value.trim();
