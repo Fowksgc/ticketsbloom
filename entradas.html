@@ -33,12 +33,26 @@
 
     label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
 
-    input {
+    input, select {
       width: 100%; padding: 16px; background: var(--input-bg); border: 1px solid var(--border);
-      border-radius: 15px; color: white; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; outline: none;
+      border-radius: 15px; color: white; font-size: 15px; box-sizing: border-box; margin-bottom: 15px; outline: none;
+      appearance: none; -webkit-appearance: none;
+    }
+
+    select {
+      background-image: url("data:image/svg+xml;utf8,<svg fill='%200f2fe' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 20px;
+      cursor: pointer;
+    }
+
+    select option {
+      background: var(--card);
+      color: white;
     }
     
-    input:focus {
+    input:focus, select:focus {
       border-color: var(--accent);
     }
 
@@ -80,6 +94,29 @@
 
     <!-- PASO 1: Formulario Único Directo -->
     <div id="step-1" class="step active">
+        <label>Tipo de Entrada</label>
+        <select id="select-tipo" onchange="actualizarMontoAuto()">
+            <option value="" data-precio="">-- Selecciona una opción --</option>
+            <optgroup label="🎟️ Entradas Oficiales">
+                <option value="Preventa 1" data-precio="20">Preventa 1 - S/ 20</option>
+                <option value="Preventa 2" data-precio="25">Preventa 2 - S/ 25</option>
+                <option value="Preventa 3" data-precio="30">Preventa 3 - S/ 30</option>
+                <option value="En puerta" data-precio="40">En puerta - S/ 40</option>
+            </optgroup>
+            <optgroup label="🍾 Boxes VIP">
+                <option value="Box Gold" data-precio="1800">Box Gold - S/ 1,800</option>
+                <option value="Box Platinum" data-precio="2200">Box Platinum - S/ 2,200</option>
+            </optgroup>
+        </select>
+
+        <label>Monto a Cobrar (S/)</label>
+        <input type="number" 
+               id="monto-entrada" 
+               placeholder="Monto" 
+               step="0.01" 
+               min="0"
+               inputmode="decimal">
+
         <label>Nombre del Cliente</label>
         <input type="text" id="nombre-cliente" placeholder="Ej. Juan Pérez">
 
@@ -90,14 +127,6 @@
                maxlength="9" 
                inputmode="numeric" 
                oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-
-        <label>Monto de la Entrada (S/)</label>
-        <input type="number" 
-               id="monto-entrada" 
-               placeholder="Ej. 50" 
-               step="0.01" 
-               min="0"
-               inputmode="decimal">
 
         <button class="btn-main" onclick="generarVenta()">Generar Ticket</button>
     </div>
@@ -129,8 +158,8 @@
                         <span id="res-nombre" class="data-value">-</span>
                     </div>
                     <div class="data-item">
-                        <span class="data-label">ENTRADA / MONTO</span>
-                        <span id="res-monto" class="data-value" style="color: var(--accent);">-</span>
+                        <span class="data-label">TIPO DE ENTRADA</span>
+                        <span id="res-tipo" class="data-value" style="color: var(--accent);">-</span>
                     </div>
                     <div class="data-item" style="text-align: left; margin-bottom: 20px;">
                         <span class="data-label">PROMOTOR OFICIAL</span>
@@ -138,11 +167,11 @@
                     </div>
                     <div class="data-item">
                         <span class="data-label">LUGAR DEL EVENTO</span>
-                        <span class="data-value">-, TRUJILLO</span>
+                        <span class="data-value">VILLA BRILLANTE, TRUJILLO</span>
                     </div>
                     <div class="data-item">
                         <span class="data-label">FECHA DEL EVENTO</span>
-                        <span class="data-value">04 DE AGOSTO 2026 - 9:00 PM</span>
+                        <span class="data-value">02 DE MAYO 2026 - 9:00 PM</span>
                     </div>
                     <div class="ticket-disclaimer" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #222; font-size: 11px; color: #555; text-align: justify; line-height: 1.3;">
                         <b>TERMINOS Y CONDICIONES:</b> Este ticket es personal e intransferible. El código QR es válido para un solo ingreso. Prohibida su reventa o alteración. La organización se reserva el derecho de admisión. 
@@ -174,12 +203,36 @@
         if (el) el.classList.add('active');
     }
 
-async function generarVenta() {
+    // Auto-completar el monto según la entrada/box seleccionada
+    function actualizarMontoAuto() {
+        const select = document.getElementById('select-tipo');
+        const opcionSeleccionada = select.options[select.selectedIndex];
+        const precio = opcionSeleccionada.getAttribute('data-precio');
+        
+        if (precio) {
+            document.getElementById('monto-entrada').value = precio;
+        } else {
+            document.getElementById('monto-entrada').value = '';
+        }
+    }
+
+    async function generarVenta() {
+        const tipoInput = document.getElementById('select-tipo').value;
         const nombreInput = document.getElementById('nombre-cliente').value.trim().toUpperCase();
         const whatsappInput = document.getElementById('whatsapp-cliente').value.trim();
         const montoInput = parseFloat(document.getElementById('monto-entrada').value);
 
         // Validaciones
+        if (!tipoInput) {
+            alert("Por favor, selecciona el tipo de entrada.");
+            return;
+        }
+
+        if (isNaN(montoInput) || montoInput <= 0) {
+            alert("Por favor, ingresa un monto válido.");
+            return;
+        }
+
         if (!nombreInput) {
             alert("Por favor, ingresa el nombre del cliente.");
             return;
@@ -190,28 +243,24 @@ async function generarVenta() {
             return;
         }
 
-        if (isNaN(montoInput) || montoInput <= 0) {
-            alert("Por favor, ingresa un monto válido.");
-            return;
-        }
-
         const codigoNuevo = `NP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
         const fechaISO = new Date().toISOString();
-        const tipoEntradaTexto = `ENTRADA GENERAL`;
+        
+        // Formato para mostrar en la BD e historial: Ej. "Preventa 1 - S/ 20.00" o "Box Gold - S/ 1800.00"
+        const tipoEntradaTexto = `${tipoInput} - S/ ${montoInput.toFixed(2)}`;
 
         const objetoVenta = {
             codigo_qr: codigoNuevo,
             nombre_cliente: nombreInput,
             whatsapp: "51" + whatsappInput,
             tipo_entrada: tipoEntradaTexto,
-            precio: montoInput,
             promotor: promotorLogueado,
             fecha_venta: fechaISO,
             usado: false
         };
 
         try {
-            // Guardar registro en base de datos
+            // Guardar en Supabase
             const { error } = await _supabase.from('tickets').insert([objetoVenta]);
             if (error) throw error;
 
@@ -224,7 +273,7 @@ async function generarVenta() {
 
             // Pintar los datos en el ticket
             document.getElementById('res-nombre').innerText = nombreInput;
-            document.getElementById('res-monto').innerText = `S/ ${montoInput.toFixed(2)}`;
+            document.getElementById('res-tipo').innerText = tipoEntradaTexto;
             document.getElementById('res-promotor').innerText = promotorLogueado.toUpperCase();
 
             irAPaso(2);
