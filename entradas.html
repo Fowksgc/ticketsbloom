@@ -7,6 +7,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -17,7 +18,7 @@
 
     body {
       font-family: -apple-system, sans-serif; background-color: var(--bg); color: var(--text);
-      margin: 0; display: flex; justify-content: center; padding-top: 20px; padding-bottom: 40px;
+      margin: 0; display: flex; justify-content: center; padding-top: 20px;
     }
 
     .container {
@@ -31,43 +32,129 @@
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+    label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+
+    .grid-precios { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-precio {
+      background: var(--input-bg); border: 1px solid var(--border); padding: 20px 10px;
+      border-radius: 18px; color: white; cursor: pointer; text-align: center; transition: 0.2s;
+    }
+    .btn-precio b { display: block; font-size: 14px; margin-bottom: 5px; }
+    .btn-precio span { color: var(--accent); font-weight: bold; font-size: 15px; }
+
+
+/* Estilo base para todos los boxes */
+.btn-box {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+    /* BOXES NORMALES (S/ 700) - Color Cyan/Neon */
+    .btn-box.box-normal {
+        background: rgba(0, 242, 254, 0.1);
+        border-color: #00f2fe;
+        color: #00f2fe;
+    }
+    
+    /* BOXES GOLD (S/ 1400) - Color Dorado VIP */
+    .btn-box.box-gold {
+        background: rgba(255, 215, 0, 0.15);
+        border-color: #FFD700;
+        color: #FFD700;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    
+    /* Estado OCUPADO - Gris oscuro */
+    .btn-box.ocupado {
+        background: #1a1a1a !important;
+        border-color: #333 !important;
+        color: #444 !important;
+        cursor: not-allowed;
+        box-shadow: none !important;
+    }
+    
+    /* Efecto al presionar */
+    .btn-box:active:not(.ocupado) {
+        transform: scale(0.9);
+    }
 
     input {
       width: 100%; padding: 16px; background: var(--input-bg); border: 1px solid var(--border);
       border-radius: 15px; color: white; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; outline: none;
     }
-    
-    input:focus {
-      border-color: var(--accent);
-    }
 
     .btn-main {
       width: 100%; padding: 18px; background: linear-gradient(135deg, #007aff, var(--accent));
       border: none; border-radius: 16px; color: #000; font-weight: 800; font-size: 15px; cursor: pointer; text-transform: uppercase;
-      transition: transform 0.1s ease;
-    }
-
-    .btn-main:active {
-      transform: scale(0.98);
     }
 
     .btn-back { 
-      display: block; width: 100%; padding: 16px; background: rgba(255, 255, 255, 0.03); 
-      border: 1px solid #444; border-radius: 16px; color: #888; font-size: 12px; font-weight: 700; 
-      text-transform: uppercase; margin-top: 15px; cursor: pointer; text-align: center;
+        display: block; width: 100%; padding: 16px; background: rgba(255, 255, 255, 0.03); 
+        border: 1px solid #444; border-radius: 16px; color: #888; font-size: 12px; font-weight: 700; 
+        text-transform: uppercase; margin-top: 15px; cursor: pointer; text-align: center;
     }
+
+    .grid-boxes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
+    
+    .btn-box {
+        background: var(--input-bg); border: 1px solid var(--border); color: white; aspect-ratio: 1;
+        display: flex; align-items: center; justify-content: center; border-radius: 50%;
+        font-weight: bold; cursor: pointer;
+    }
+    .btn-box.ocupado { background: #222; border-color: #444; color: #444; cursor: not-allowed; opacity: 0.5; }
+
+    
+
+/* Podrías añadir una lógica en JS para poner esta clase a los boxes caros (VIP) */
+.btn-box.vip {
+    border: 1px solid #ff00ff; /* Un color neón magenta para los caros */
+    color: #ff00ff;
+    box-shadow: 0 0 10px rgba(255, 0, 255, 0.2);
+}
 
     .ticket-visual { background: #000; border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px; }
     #qrcode { background: white; padding: 12px; border-radius: 15px; display: inline-block; margin-bottom: 20px; }
 
-    .ticket-data { text-align: left; border-top: 1px dashed #333; padding-top: 20px; width: 100%; }
+    .ticket-data { text-align: left; border-top: 1px dashed #333; padding-top: 20px; }
     .data-item { margin-bottom: 15px; }
     .data-label { font-size: 9px; color: #666; display: block; }
     .data-value { font-size: 15px; font-weight: bold; text-transform: uppercase; color: #fff; }
 
     .logo-fest-container { width: 100%; max-width: 200px; margin: 0 auto 10px; display: flex; justify-content: center; }
     .logo-fest-container img { width: 100%; }
+    .badge-informativo {
+background: rgba(0, 242, 254, 0.1); /* Fondo cian muy sutil */
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 12px 40px;
+    border-radius: 50px; /* Bordes totalmente redondeados */
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: inline-block;
+    box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+    text-align: center;
+    }
+
+/* Estilo para el botón cuando está desactivado en la DB */
+.btn-precio.disabled {
+    opacity: 0.3;
+    filter: grayscale(1);
+    cursor: not-allowed;
+    border: 1px dashed #444;
+}
+
+.btn-precio.disabled span {
+    color: #444; /* Apagamos el color cian del precio */
+}
   </style>
 </head>
 <body>
@@ -78,86 +165,90 @@
     </div>
     <div class="subtitle" id="promotor-tag">PROMOTOR: CARGANDO...</div>
 
-    <!-- PASO 1: Formulario Único Directo -->
     <div id="step-1" class="step active">
-        <label>Nombre del Cliente</label>
-        <input type="text" id="nombre-cliente" placeholder="Ej. Juan Pérez">
-
-        <label>WhatsApp (9 dígitos)</label>
-        <input type="tel" 
-               id="whatsapp-cliente" 
-               placeholder="Ej. 987654321" 
-               maxlength="9" 
-               inputmode="numeric" 
-               oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-
-        <label>Monto de la Entrada (S/)</label>
-        <input type="number" 
-               id="monto-entrada" 
-               placeholder="Ej. 50" 
-               step="0.01" 
-               min="0"
-               inputmode="decimal">
-
-        <button class="btn-main" onclick="generarVenta()">Generar Ticket</button>
+        <label>Selecciona Tipo de Entrada</label>
+        <div id="grid-precios" class="grid-precios"></div>
     </div>
 
-    <!-- PASO 2: Resultado del Ticket Visual -->
+    <div id="step-box" class="step">
+        <label>Mapa del Evento - NEON PARTY</label>
+        <img src="assets/croquis.png" style="width: 100%; border-radius: 15px; margin-bottom: 15px;">
+        <div class="grid-boxes" id="grid-boxes"></div>
+        <button class="btn-back" onclick="irAPaso(1)">← Volver</button>
+    </div>
+
     <div id="step-2" class="step">
-        <div class="ticket-visual" id="ticket-area-pdf" style="
-            position: relative; 
-            overflow: hidden; 
-            background: #000; 
-            border-radius: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;">
+          <div style="display: flex; justify-content: center; margin-bottom: 25px;">
+            <div id="label-seleccionada" class="badge-informativo"></div>
+        </div>
+        <input type="text" id="nombre-cliente" placeholder="Nombre completo">
+        <input type="tel" 
+       id="whatsapp-cliente" 
+       placeholder="WhatsApp (9 dígitos)" 
+       maxlength="9" 
+       inputmode="numeric" 
+       oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+        <button class="btn-main" onclick="generarVenta()">Generar Ticket</button>
+        <button class="btn-back" onclick="irAPaso(1)">← Volver</button>
+    </div>
 
-            <div style="position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: 100%; padding: 10px;">
+<div id="step-3" class="step">
+    <div class="ticket-visual" id="ticket-area-pdf" style="
+        position: relative; 
+        overflow: hidden; 
+        background: #000; 
+        border-radius: 20px; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center;">
+        
 
-                <div class="logo-subtle-container" style="display: flex; justify-content: center; margin-top: 15px; padding-bottom: 10px;">
-                    <img src="assets/logo1.png" alt="Logo Bloom" style="width: 70px; height: auto; opacity: 0.6; mix-blend-mode: screen;">
+
+        <div style="position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: 100%; padding: 10px;">
+
+                  <div class="logo-subtle-container" style="display: flex; justify-content: center; margin-top: 15px;padding-bottom:10px">
+                <img src="assets/logo1.png" alt="Logo Bloom" style="width: 70px; height: auto; opacity: 0.6; mix-blend-mode: screen;">
+            </div>
+            
+            <h2 style="margin: 10px 0; text-shadow: 2px 2px 4px #000;">¡BIENVENIDO A LA EXPERIENCIA!</h2>
+          
+            <div id="qrcode" style="background: white; padding: 10px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5);"></div>
+            
+            <div class="ticket-data">
+                <div class="data-item">
+                    <span class="data-label">CLIENTE</span>
+                    <span id="res-nombre" class="data-value">-</span>
                 </div>
-                
-                <h2 style="margin: 10px 0; text-shadow: 2px 2px 4px #000; font-size: 16px; text-align: center;">¡BIENVENIDO A LA EXPERIENCIA!</h2>
-              
-                <div id="qrcode" style="background: white; padding: 10px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5);"></div>
-                
-                <div class="ticket-data">
-                    <div class="data-item">
-                        <span class="data-label">CLIENTE</span>
-                        <span id="res-nombre" class="data-value">-</span>
-                    </div>
-                    <div class="data-item">
-                        <span class="data-label">ENTRADA / MONTO</span>
-                        <span id="res-monto" class="data-value" style="color: var(--accent);">-</span>
-                    </div>
-                    <div class="data-item" style="text-align: left; margin-bottom: 20px;">
-                        <span class="data-label">PROMOTOR OFICIAL</span>
-                        <span id="res-promotor" class="data-value" style="color: var(--accent);">-</span>
-                    </div>
-                    <div class="data-item">
-                        <span class="data-label">LUGAR DEL EVENTO</span>
-                        <span class="data-value">VILLA BRILLANTE, TRUJILLO</span>
-                    </div>
-                    <div class="data-item">
-                        <span class="data-label">FECHA DEL EVENTO</span>
-                        <span class="data-value">02 DE MAYO 2026 - 9:00 PM</span>
-                    </div>
-                    <div class="ticket-disclaimer" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #222; font-size: 11px; color: #555; text-align: justify; line-height: 1.3;">
-                        <b>TERMINOS Y CONDICIONES:</b> Este ticket es personal e intransferible. El código QR es válido para un solo ingreso. Prohibida su reventa o alteración. La organización se reserva el derecho de admisión. 
-                    </div>
-
-                    <p style="font-size: 10px; color: #333; margin-top: 8px; margin-bottom: 0; text-align: center; font-family: sans-serif;">
-                        © 2026 BloomExperience. Todos los derechos reservados.
-                    </p>
+                <div class="data-item">
+                    <span class="data-label">ENTRADA</span>
+                    <span id="res-tipo" class="data-value" style="color: var(--accent);">-</span>
                 </div>
+                <div class="data-item" style="text-align: left; margin-bottom: 20px;">
+                  <span class="data-label">PROMOTOR OFICIAL</span>
+                  <span id="res-promotor" class="data-value" style="color: var(--accent);">-</span>
+                </div>
+
+              <div class="data-item">
+                    <span class="data-label">LUGAR DEL EVENTO</span>
+                    <span id="res-fecha" class="data-value">VILLA BRILLANTE, TRUJILLO</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">FECHA DEL EVENTO</span>
+                    <span id="res-fecha" class="data-value">02 DE MAYO 2026 - 9:00 PM</span>
+                </div>
+                  <div class="ticket-disclaimer" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #222; font-size: 12px; color: #555; text-align: justify; line-height: 1.3;">
+                  <b>TERMINOS Y CONDICIONES:</b> Este ticket es personal e intransferible. El código QR es válido para un solo ingreso. Prohibida su reventa o alteración. La organización se reserva el derecho de admisión. 
+                </div>
+
+               <p style="font-size: 10px; color: #333; margin-top: 8px; margin-bottom: 0; text-align: center; font-family: sans-serif;">
+                © 2026 BloomExperience. Todos los derechos reservados.
+               </p>
             </div>
         </div>
-            
-        <button class="btn-main" style="background: #fff; color: #000; margin-top: 15px; margin-bottom: 8px;" onclick="enviarTicketWhatsApp()">COMPARTIR TICKET</button>
-        <button class="btn-back" onclick="window.location.reload()">+ Nueva Venta</button>
     </div>
+        
+    <button class="btn-main" style="background: #fff; color: #000; margin-top: 15px; margin-bottom: 8px;" onclick="enviarTicketWhatsApp()">COMPARTIR TICKET</button>
+    <button class="btn-back" onclick="window.location.reload()">+ Nueva Venta</button>
 </div>
 
 <script>
@@ -165,142 +256,236 @@
     const SUPABASE_KEY = 'sb_publishable_JJGnQbTeKrQ8m02e76pZpg_nJ9lGp0m';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    let entradaSeleccionada = null;
+    let precioSeleccionado = null;
     let datosTicket = null;
+    let boxSeleccionado = null;
     const promotorLogueado = localStorage.getItem('promotor_activo') || "Invitado";
+
+async function cargarPrecios() {
+    const grid = document.getElementById('grid-precios');
+    const { data, error } = await _supabase.from('precios').select('*').order('orden', { ascending: true });
+    
+    if (error) return;
+    grid.innerHTML = "";
+
+    data.forEach(p => {
+        const btn = document.createElement('div');
+        
+        // 1. Aplicamos clase disabled si no está activo
+        btn.className = 'btn-precio' + (p.activo ? '' : ' disabled');
+
+        // 2. Lógica para ocultar precio si es BOX
+        const esBox = p.tipo_entrada.toUpperCase().includes("BOX");
+        
+        if (esBox) {
+            // No mostramos p.precio aquí
+            btn.innerHTML = `<b>${p.tipo_entrada}</b><span style="font-size:12px; opacity:0.6;">Seleccionar box</span>`;
+        } else {
+            // Mostramos el precio normal de la tabla precios
+            btn.innerHTML = `<b>${p.tipo_entrada}</b><span>S/ ${p.precio}</span>`;
+        }
+
+        // 3. Lógica de click
+        if (p.activo) {
+            btn.onclick = () => {
+                entradaSeleccionada = p.tipo_entrada;
+                
+                if (esBox) {
+                    precioSeleccionado = null; 
+                    generarGridBoxes();
+                    irAPaso('box');
+                } else {
+                    precioSeleccionado = p.precio;
+                    boxSeleccionado = null;
+                    document.getElementById('label-seleccionada').innerText = p.tipo_entrada + " - S/ " + p.precio;
+                    irAPaso(2);
+                }
+            };
+        } else {
+            btn.onclick = () => alert("No disponible actualmente");
+        }
+
+        grid.appendChild(btn);
+    });
+}
 
     function irAPaso(n) {
         document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-        const el = document.getElementById('step-' + n);
-        if (el) el.classList.add('active');
+        const target = n === 'box' ? 'step-box' : 'step-' + n;
+        const el = document.getElementById(target);
+        if(el) el.classList.add('active');
     }
 
-    async function generarVenta() {
-        const nombreInput = document.getElementById('nombre-cliente').value.trim().toUpperCase();
-        const whatsappInput = document.getElementById('whatsapp-cliente').value.trim();
-        const montoInput = parseFloat(document.getElementById('monto-entrada').value);
+async function generarGridBoxes() {
+    const grid = document.getElementById('grid-boxes');
+    grid.innerHTML = "<p style='grid-column: span 5; color:#666; text-align:center;'>Cargando mapa...</p>";
+    
+    const { data: listaBoxes, error } = await _supabase
+        .from('boxes')
+        .select('*')
+        .order('numero_box', { ascending: true });
 
-        // Validaciones
-        if (!nombreInput) {
-            alert("Por favor, ingresa el nombre del cliente.");
-            return;
+    if (error) return alert("Error al cargar boxes");
+
+    grid.innerHTML = "";
+    
+    listaBoxes.forEach(box => {
+        const btn = document.createElement('div');
+        
+        // --- LÓGICA DE CLASES DINÁMICAS ---
+        let statusClass = box.estado === 'ocupado' ? ' ocupado' : '';
+        // Si el precio es 1400 le ponemos la clase 'gold', si no, 'normal'
+        let priceClass = (box.precio >= 1400) ? ' box-gold' : ' box-normal';
+        
+        btn.className = 'btn-box' + statusClass + priceClass;
+        btn.innerText = box.numero_box;
+
+        if (box.estado !== 'ocupado') {
+            btn.onclick = () => {
+                boxSeleccionado = box.numero_box;
+                precioSeleccionado = box.precio; 
+                document.getElementById('label-seleccionada').innerText = `${entradaSeleccionada} - BOX ${box.numero_box} - S/ ${precioSeleccionado}`;
+                irAPaso(2);
+            };
         }
+        
+        grid.appendChild(btn);
+    });
+}
+
+    async function generarVenta() {
+        const whatsappInput = document.getElementById('whatsapp-cliente').value.trim();
+        const nombreInput = document.getElementById('nombre-cliente').value.trim().toUpperCase();
 
         if (whatsappInput.length !== 9 || isNaN(whatsappInput)) {
             alert("El número de WhatsApp debe tener exactamente 9 dígitos.");
             return;
         }
 
-        if (isNaN(montoInput) || montoInput <= 0) {
-            alert("Por favor, ingresa un monto válido.");
+        if (!nombreInput || !whatsappInput) {
+            alert("Completa los datos del cliente");
             return;
         }
 
         const codigoNuevo = `NP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+        const tipoFinal = boxSeleccionado ? `BOX ${boxSeleccionado}` : entradaSeleccionada;
         const fechaISO = new Date().toISOString();
-        const tipoEntradaTexto = `ENTRADA GENERAL`;
 
         const objetoVenta = {
             codigo_qr: codigoNuevo,
             nombre_cliente: nombreInput,
             whatsapp: "51" + whatsappInput,
-            tipo_entrada: tipoEntradaTexto,
-            precio: montoInput,
+            tipo_entrada: tipoFinal,
             promotor: promotorLogueado,
             fecha_venta: fechaISO,
             usado: false
         };
 
         try {
-            // Guardar registro en base de datos
             const { error } = await _supabase.from('tickets').insert([objetoVenta]);
             if (error) throw error;
+
+            if (boxSeleccionado) {
+                await _supabase.from('boxes').update({ estado: 'ocupado' }).eq('numero_box', boxSeleccionado);
+            }
 
             datosTicket = { 
                 nombre: nombreInput, 
                 codigo: codigoNuevo, 
                 whatsapp: "51" + whatsappInput, 
-                monto: montoInput.toFixed(2)
+                entrada: tipoFinal, 
+                precio: precioSeleccionado 
             };
 
-            // Pintar los datos en el ticket
             document.getElementById('res-nombre').innerText = nombreInput;
-            document.getElementById('res-monto').innerText = `S/ ${montoInput.toFixed(2)}`;
+            document.getElementById('res-tipo').innerText = `${tipoFinal} - S/ ${precioSeleccionado}`;
             document.getElementById('res-promotor').innerText = promotorLogueado.toUpperCase();
 
-            irAPaso(2);
+            irAPaso(3);
 
-            // Generar Código QR
             setTimeout(() => {
                 const qrContainer = document.getElementById("qrcode");
                 if (qrContainer) {
                     qrContainer.innerHTML = "";
                     new QRCode(qrContainer, { text: codigoNuevo, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.H });
                 }
-            }, 200);
+            }, 300);
 
         } catch (error) {
-            alert("Error al registrar venta: " + error.message);
+            alert("Error: " + error.message);
         }
     }
 
-    async function enviarTicketWhatsApp() {
-        const { jsPDF } = window.jspdf;
-        const elementoTicket = document.getElementById('ticket-area-pdf');
+async function enviarTicketWhatsApp() {
+    const { jsPDF } = window.jspdf;
+    const elementoTicket = document.getElementById('ticket-area-pdf');
 
-        const qrCanvas = document.querySelector('#qrcode canvas');
-        const qrImg = document.querySelector('#qrcode img');
+    // 1. Buscamos el Canvas o la Imagen del QR
+    const qrCanvas = document.querySelector('#qrcode canvas');
+    const qrImg = document.querySelector('#qrcode img');
 
-        if (!elementoTicket || !datosTicket) return alert("Error: Datos insuficientes");
+    if (!elementoTicket || !datosTicket) return alert("Error: Datos insuficientes");
 
-        try {
-            let qrListo = false;
-            let intentos = 0;
+    try {
+        // --- TRUCO DE SINCRONIZACIÓN ---
+        // Esperamos a que el QR realmente tenga información técnica
+        let qrListo = false;
+        let intentos = 0;
 
-            while (!qrListo && intentos < 10) {
-                if ((qrCanvas && qrCanvas.width > 0) || (qrImg && qrImg.src.length > 100)) {
-                    qrListo = true;
-                } else {
-                    await new Promise(r => setTimeout(r, 200));
-                    intentos++;
-                }
+        while (!qrListo && intentos < 10) {
+            // Verificamos si el canvas tiene contenido o si la imagen ya tiene SRC
+            if ((qrCanvas && qrCanvas.width > 0) || (qrImg && qrImg.src.length > 100)) {
+                qrListo = true;
+            } else {
+                await new Promise(r => setTimeout(r, 200)); // Esperamos 200ms por intento
+                intentos++;
             }
-
-            if (qrCanvas && qrListo && qrImg) {
-                qrImg.src = qrCanvas.toDataURL("image/png");
-                qrImg.style.display = "inline-block";
-                qrCanvas.style.display = "none";
-            }
-
-            await new Promise(r => setTimeout(r, 300));
-
-            const canvas = await html2canvas(elementoTicket, {
-                scale: 3, 
-                backgroundColor: "#000000",
-                useCORS: true,
-                logging: false
-            });
-
-            const imgData = canvas.toDataURL('image/png');
-
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'px',
-                format: [canvas.width / 3, canvas.height / 3]
-            });
-
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
-
-            const nombreArchivo = `TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
-            pdf.save(nombreArchivo);
-
-        } catch (err) {
-            console.error("Error crítico:", err);
-            alert("Hubo un error al generar la imagen. Inténtalo nuevamente.");
         }
-    }
 
-    window.onload = () => {
+        // Si el QR es un canvas, lo forzamos a imagen para que html2canvas lo vea sí o sí
+        if (qrCanvas && qrListo) {
+            qrImg.src = qrCanvas.toDataURL("image/png");
+            qrImg.style.display = "inline-block";
+            qrCanvas.style.display = "none";
+        }
+        // -------------------------------
+
+        // Pequeño respiro extra para que el DOM se actualice
+        await new Promise(r => setTimeout(r, 300));
+
+        const canvas = await html2canvas(elementoTicket, {
+            scale: 3, 
+            backgroundColor: "#050509",
+            useCORS: true,
+            logging: false,
+            // Forzamos a que ignore elementos ocultos que puedan tapar el QR
+            ignoreElements: (el) => el.classList.contains('no-export') 
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [canvas.width / 3, canvas.height / 3]
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
+
+        const nombreArchivo = `TICKET_${datosTicket.nombre.replace(/\s+/g, '_')}.pdf`;
+        pdf.save(nombreArchivo);
+
+
+    } catch (err) {
+        console.error("Error crítico:", err);
+        alert("El sistema está lento. Por favor, intenta presionar el botón una vez más.");
+    }
+}
+
+    window.onload = async () => {
         document.getElementById('promotor-tag').innerText = "PROMOTOR: " + promotorLogueado.toUpperCase();
+        await cargarPrecios();
     };
 </script>
 </body>
