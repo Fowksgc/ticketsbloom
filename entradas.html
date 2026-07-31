@@ -216,81 +216,80 @@
         }
     }
 
-    async function generarVenta() {
-        const tipoInput = document.getElementById('select-tipo').value;
-        const nombreInput = document.getElementById('nombre-cliente').value.trim().toUpperCase();
-        const whatsappInput = document.getElementById('whatsapp-cliente').value.trim();
-        const montoInput = parseFloat(document.getElementById('monto-entrada').value);
+async function generarVenta() {
+    const tipoInput = document.getElementById('select-tipo').value;
+    const nombreInput = document.getElementById('nombre-cliente').value.trim().toUpperCase();
+    const whatsappInput = document.getElementById('whatsapp-cliente').value.trim();
+    const montoInput = parseFloat(document.getElementById('monto-entrada').value);
 
-        // Validaciones
-        if (!tipoInput) {
-            alert("Por favor, selecciona el tipo de entrada.");
-            return;
-        }
+    // Validaciones
+    if (!tipoInput) {
+        alert("Por favor, selecciona el tipo de entrada.");
+        return;
+    }
 
-        if (isNaN(montoInput) || montoInput <= 0) {
-            alert("Por favor, ingresa un monto válido.");
-            return;
-        }
+    if (isNaN(montoInput) || montoInput <= 0) {
+        alert("Por favor, ingresa un monto válido.");
+        return;
+    }
 
-        if (!nombreInput) {
-            alert("Por favor, ingresa el nombre del cliente.");
-            return;
-        }
+    if (!nombreInput) {
+        alert("Por favor, ingresa el nombre del cliente.");
+        return;
+    }
 
-        if (whatsappInput.length !== 9 || isNaN(whatsappInput)) {
-            alert("El número de WhatsApp debe tener exactamente 9 dígitos.");
-            return;
-        }
+    if (whatsappInput.length !== 9 || isNaN(whatsappInput)) {
+        alert("El número de WhatsApp debe tener exactamente 9 dígitos.");
+        return;
+    }
 
-        const codigoNuevo = `NP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-        const fechaISO = new Date().toISOString();
-        
-        // Formato para mostrar en la BD e historial: Ej. "Preventa 1 - S/ 20.00" o "Box Gold - S/ 1800.00"
-        const tipoEntradaTexto = `${tipoInput} - S/ ${montoInput.toFixed(2)}`;
+    const codigoNuevo = `NP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+    const fechaISO = new Date().toISOString();
 
-        const objetoVenta = {
-            codigo_qr: codigoNuevo,
-            nombre_cliente: nombreInput,
-            whatsapp: "51" + whatsappInput,
-            tipo_entrada: tipoEntradaTexto,
-            promotor: promotorLogueado,
-            fecha_venta: fechaISO,
-            usado: false
+    // Objeto que se insertará en Supabase
+    const objetoVenta = {
+        codigo_qr: codigoNuevo,
+        nombre_cliente: nombreInput,
+        whatsapp: "51" + whatsappInput,
+        tipo_entrada: tipoInput, // Guarda únicamente el tipo (ej. "Preventa 1")
+        precio: montoInput,      // Guarda el valor numérico en la columna 'precio'
+        promotor: promotorLogueado,
+        fecha_venta: fechaISO,
+        usado: false
+    };
+
+    try {
+        // Insertar en la tabla 'tickets' de Supabase
+        const { error } = await _supabase.from('tickets').insert([objetoVenta]);
+        if (error) throw error;
+
+        datosTicket = { 
+            nombre: nombreInput, 
+            codigo: codigoNuevo, 
+            whatsapp: "51" + whatsappInput, 
+            monto: montoInput.toFixed(2)
         };
 
-        try {
-            // Guardar en Supabase
-            const { error } = await _supabase.from('tickets').insert([objetoVenta]);
-            if (error) throw error;
+        // Mostrar los datos en la vista previa del ticket
+        document.getElementById('res-nombre').innerText = nombreInput;
+        document.getElementById('res-tipo').innerText = tipoInput.toUpperCase(); // Muestra solo el tipo en la entrada
+        document.getElementById('res-promotor').innerText = promotorLogueado.toUpperCase();
 
-            datosTicket = { 
-                nombre: nombreInput, 
-                codigo: codigoNuevo, 
-                whatsapp: "51" + whatsappInput, 
-                monto: montoInput.toFixed(2)
-            };
+        irAPaso(2);
 
-            // Pintar los datos en el ticket
-            document.getElementById('res-nombre').innerText = nombreInput;
-            document.getElementById('res-tipo').innerText = tipoEntradaTexto;
-            document.getElementById('res-promotor').innerText = promotorLogueado.toUpperCase();
+        // Generar el código QR
+        setTimeout(() => {
+            const qrContainer = document.getElementById("qrcode");
+            if (qrContainer) {
+                qrContainer.innerHTML = "";
+                new QRCode(qrContainer, { text: codigoNuevo, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.H });
+            }
+        }, 200);
 
-            irAPaso(2);
-
-            // Generar Código QR
-            setTimeout(() => {
-                const qrContainer = document.getElementById("qrcode");
-                if (qrContainer) {
-                    qrContainer.innerHTML = "";
-                    new QRCode(qrContainer, { text: codigoNuevo, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.H });
-                }
-            }, 200);
-
-        } catch (error) {
-            alert("Error al registrar venta: " + error.message);
-        }
+    } catch (error) {
+        alert("Error al registrar venta: " + error.message);
     }
+}
 
     async function enviarTicketWhatsApp() {
         const { jsPDF } = window.jspdf;
