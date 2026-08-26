@@ -64,47 +64,48 @@
       text-transform: uppercase; margin-top: 15px; cursor: pointer; text-align: center;
     }
 
-    /* Contenedor principal del Ticket con la imagen de fondo */
+    /* Contenedor principal del Ticket */
     .ticket-visual { 
       position: relative; 
       overflow: hidden; 
-      background: #0a0a12; 
+      background-color: #000; /* Color de respaldo por si no carga la imagen */
       border-radius: 20px; 
       padding: 20px; 
       text-align: center; 
       margin-bottom: 20px; 
     }
 
-    /* Imagen de fondo con opacidad más alta para que luzca la portada */
+    /* Imagen de fondo corregida con opacidad alta para lucir la portada */
     .ticket-visual::before {
       content: "";
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      background-image: url('assets/fondo-evento.jpg'); /* Reemplaza con tu ruta de imagen */
+      background-image: url('assets/huan62.jpg'); /* Reemplaza o verifica tu ruta */
       background-size: cover;
       background-position: center;
-      opacity: 0.35; /* Ajusta la visibilidad de la portada aquí */
+      opacity: 0.40; 
       z-index: 0;
     }
 
-    /* Capa de diseño en dos columnas */
+    /* Estructura de 2 columnas con el QR centrado verticalmente */
     .ticket-grid {
       display: flex;
       gap: 15px;
-      align-items: flex-start;
+      align-items: center; /* Centra verticalmente el QR respecto a los datos */
       position: relative;
       z-index: 1;
+      margin-top: 15px; /* Espacio añadido entre el título y los datos */
     }
 
     .ticket-col-left {
-      flex: 0 0 120px; /* Ancho fijo para la columna del QR */
+      flex: 0 0 120px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
     .ticket-col-right {
-      flex: 1; /* Ocupa el resto del espacio */
+      flex: 1;
       text-align: left;
     }
 
@@ -113,7 +114,7 @@
 
     .ticket-data { width: 100%; }
     .data-item { margin-bottom: 10px; }
-    .data-label { font-size: 8px; color: #aaa; display: block; text-shadow: 1px 1px 2px #000; }
+    .data-label { font-size: 8px; color: #ccc; display: block; text-shadow: 1px 1px 2px #000; }
     .data-value { font-size: 13px; font-weight: bold; text-transform: uppercase; color: #fff; text-shadow: 1px 1px 2px #000; }
 
     .logo-fest-container { width: 100%; max-width: 200px; margin: 0 auto 10px; display: flex; justify-content: center; }
@@ -155,27 +156,27 @@
         <button class="btn-main" onclick="generarVenta()">Generar Ticket</button>
     </div>
 
-    <!-- PASO 2: Resultado del Ticket Visual en 2 Columnas -->
+    <!-- PASO 2: Resultado del Ticket Visual -->
     <div id="step-2" class="step">
         <div class="ticket-visual" id="ticket-area-pdf">
 
-            <!-- Contenido superior opcional (Título y Logo sutil) -->
-            <div style="position: relative; z-index: 1; margin-bottom: 12px; text-align: center;">
+            <!-- Cabecera del ticket -->
+            <div style="position: relative; z-index: 1; text-align: center;">
                 <div style="display: flex; justify-content: center; margin-bottom: 4px;">
                     <img src="assets/logo1.png" alt="Logo Bloom" style="width: 50px; height: auto; opacity: 0.9; mix-blend-mode: screen;">
                 </div>
                 <h2 style="margin: 0; text-shadow: 2px 2px 4px #000; font-size: 14px;">¡HUAN62 EN TRUJILLO!</h2>
             </div>
 
-            <!-- Estructura de 2 Columnas -->
+            <!-- Estructura de 2 Columnas con espacio superior y QR centrado verticalmente -->
             <div class="ticket-grid">
                 <!-- Columna Izquierda: QR -->
                 <div class="ticket-col-left">
                     <div id="qrcode"></div>
-                    <span style="font-size: 8px; color: #ccc; margin-top: 6px; text-shadow: 1px 1px 2px #000; text-align: center;">ESCANÉAME</span>
+                    <span style="font-size: 8px; color: #fff; margin-top: 6px; text-shadow: 1px 1px 2px #000; text-align: center; font-weight: bold;">ESCANÉAME</span>
                 </div>
 
-                <!-- Columna Derecha: Datos del Cliente y Evento -->
+                <!-- Columna Derecha: Datos -->
                 <div class="ticket-col-right">
                     <div class="ticket-data">
                         <div class="data-item">
@@ -202,12 +203,12 @@
                 </div>
             </div>
 
-            <!-- Términos y condiciones inferiores -->
-            <div style="position: relative; z-index: 1; margin-top: 15px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 9px; color: #ccc; text-align: justify; line-height: 1.2; text-shadow: 1px 1px 2px #000;">
+            <!-- Términos y condiciones -->
+            <div style="position: relative; z-index: 1; margin-top: 15px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 9px; color: #ddd; text-align: justify; line-height: 1.2; text-shadow: 1px 1px 2px #000;">
                 <b>TÉRMINOS:</b> Personal e intransferible. Válido para un solo ingreso.
             </div>
 
-            <p style="position: relative; z-index: 1; font-size: 8px; color: #aaa; margin: 5px 0 0 0; text-align: center; text-shadow: 1px 1px 2px #000;">
+            <p style="position: relative; z-index: 1; font-size: 8px; color: #ccc; margin: 5px 0 0 0; text-align: center; text-shadow: 1px 1px 2px #000;">
                 © 2026 BloomExperience. Todos los derechos reservados.
             </p>
         </div>
@@ -345,7 +346,7 @@
 
             const canvas = await html2canvas(elementoTicket, {
                 scale: 3, 
-                backgroundColor: "#0a0a12",
+                backgroundColor: "#000000",
                 useCORS: true,
                 logging: false
             });
